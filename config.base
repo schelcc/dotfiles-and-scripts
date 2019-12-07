@@ -181,6 +181,8 @@ bindsym XF86Launch9 exec "playerctl next"
 bindsym XF86Launch8 exec "playerctl previous"
 bindsym Ctrl+Shift+g --release exec "google-chrome"
 bindsym $mod1+t exec "j4-make-config -i"
+bindsym Ctrl+Shift+b exec "wallpaper.sh"
+bindsym $mod1+m exec "minecraft-launcher"
 
 # resize window (you can also use the mouse for that)
 mode "resize" {
