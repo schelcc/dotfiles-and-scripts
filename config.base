@@ -33,6 +33,9 @@ exec --no-startup-id nm-applet
 exec "xrandr --output DisplayPort-1-1 --mode 1920x1080"
 exec "xrandr --output DisplayPort-1-1 --left-of HDMI-1"
 
+#startup
+exec "/home/schelcc/.config/i3/startup.sh"
+
 # Use pactl to adjust volume in PulseAudio.
 set $refresh_i3status killall -SIGUSR1 i3status
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5% && $refresh_i3status
@@ -45,6 +48,14 @@ floating_modifier $mod
 
 # start a terminal
 bindsym $mod+Return exec urxvt
+
+#show and hide notepads
+bindsym $mod+p exec "xpad -t"
+bindsym $mod+n exec "xpad -n"
+
+#set wacom to display
+bindsym $mod+Shift+1 exec "~/bin/wacom-left.sh"
+bindsym $mod+Shift+2 exec "~/bin/wacom-right.sh"
 
 # kill focused window
 bindsym $mod+Shift+q kill
@@ -88,6 +99,7 @@ bindsym $mod+v split v
 
 # enter fullscreen mode for the focused container
 bindsym $mod+f fullscreen toggle
+bindsym $mod+Shift+f fullscreen toggle global
 
 # change container layout (stacked, tabbed, toggle split)
 bindsym $mod+s layout stacking
@@ -122,8 +134,8 @@ set $ws11 "11"
 set $ws12 "12"
 
 #monitor vairalbes
-set $dleft "DisplayPort-1-1"
-set $dright "HDMI-1"
+set $dleft "DisplayPort-1"
+set $dright "HDMI-A-1"
 
 workspace $ws1 output $dleft
 workspace $ws2 output $dleft
@@ -176,13 +188,21 @@ bindsym $mod+Shift+r restart
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
 
 #my bindings
-bindsym XF86AudioPlay --release exec "playerctl play-pause"
-bindsym XF86Launch9 exec "playerctl next"
-bindsym XF86Launch8 exec "playerctl previous"
+bindsym XF86AudioPlay --release exec "playerctl play-pause --player=spotify"
+bindsym XF86Launch9 exec "playerctl next --player=spotify"
+bindsym XF86Launch8 exec "playerctl previous --player=spotify"
 bindsym Ctrl+Shift+g --release exec "google-chrome"
 bindsym $mod1+t exec "j4-make-config -i"
 bindsym Ctrl+Shift+b exec "wallpaper.sh"
-bindsym $mod1+m exec "minecraft-launcher"
+bindsym $mod1+m exec minecraft-launcher
+bindsym $mod1+s exec "screenshot"
+#bindsym $mod1+
+
+# Make the currently focused window a scratchpad
+bindsym $mod+Shift+minus move scratchpad
+
+# Show the first scratchpad window
+bindsym $mod+minus scratchpad show
 
 # resize window (you can also use the mouse for that)
 mode "resize" {
@@ -209,6 +229,12 @@ mode "resize" {
         bindsym $mod+r mode "default"
 }
 
+for_window [class="^xpad"] floating toggle
+#for_window [class="^zoom"] floating toggle
+assign [class="^zoom"] $ws12
+assign [class="^discord"] $ws6
+assign [class="^spotify"] $ws2
+
 bindsym $mod+r mode "resize"
 
 # colors       Border  CurBar  Curbar text
@@ -225,7 +251,7 @@ bar {
 	position bottom
 	font pango:open sans 8
 	strip_workspace_numbers yes
-	tray_output HDMI-1
+	tray_output $dright
 	status_command i3status
 	
 	# $i3-theme-bar
