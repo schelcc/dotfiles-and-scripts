@@ -1,0 +1,22 @@
+#!/bin/bash
+
+config=$HOME/.config/polybar/gruvbox.ini
+
+active_grep=$(grep "^light-text" $config)
+passive_grep=$(grep "^passive-text" $config)
+
+active=${active_grep#*=}
+passive=${passive_grep#*=}
+
+player_status=$(playerctl status 2> /dev/null)
+if [[ $? -eq 0 ]]; then
+	metadata="$(playerctl metadata artist) - $(playerctl metadata title)"
+fi
+
+if [[ $player_status = "Playing" ]]; then
+	echo "%{F$active}$metadata%{F-}"
+elif [[ $player_status = "Paused" ]]; then
+	echo "%{F$passive}$metadata%{F-}"
+else
+	echo ""
+fi
