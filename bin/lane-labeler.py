@@ -1,1 +1,0 @@
-/home/schelcc/Documents/AVC/data-management/tkinter-labeler.py
