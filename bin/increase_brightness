@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+import subprocess
+
+step = 0.1
+
+monitor = "eDP-1"
+
+cmd = f"xrandr --verbose --current | grep ^{monitor} -A5 | tail -n1"
+
+stdout = str(subprocess.check_output(cmd, shell=True))[16:19]
+
+current_brightness = float(stdout)
+
+new_brightness = min(1.0, current_brightness+step)
+
+subprocess.check_output([f"xrandr --output {monitor} --brightness {new_brightness:.1f}"], shell=True)
+
