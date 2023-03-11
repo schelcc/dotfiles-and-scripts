@@ -182,7 +182,8 @@ bindsym $mod+minus scratchpad show
 
 # gaps
 gaps inner 5
-gaps outer 5
+#gaps outer 5
+gaps bottom 30
 
 # resize window (you can also use the mouse for that)
 mode "resize" {

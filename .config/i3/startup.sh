@@ -1,5 +1,4 @@
 #!/bin/bash
-xcompmgr -c &
 xpad &
 blueman-applet &
 wallpaper.sh &

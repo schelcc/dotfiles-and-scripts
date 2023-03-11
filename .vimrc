@@ -6,7 +6,7 @@ set noerrorbells
 set cursorline
 
 syntax on
-colorscheme desert
+colorscheme pablo
 
 if exists('$TMUS')
 	let &t_SI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=1\x7\<Esc>\\"

@@ -1,22 +1,87 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-config=$HOME/.config/polybar/gruvbox.ini
+import subprocess
+from math import trunc
+import os
+import time
+from datetime import datetime
 
-active_grep=$(grep "^light-text" $config)
-passive_grep=$(grep "^passive-text" $config)
 
-active=${active_grep#*=}
-passive=${passive_grep#*=}
+def to_num(input_str):
+	output_str = ""
+	for ch in input_str:
+		if ch.isdigit():
+			output_str += ch
+	return (int(output_str))
 
-player_status=$(playerctl status 2> /dev/null)
-if [[ $? -eq 0 ]]; then
-	metadata="$(playerctl metadata artist) - $(playerctl metadata title)"
-fi
 
-if [[ $player_status = "Playing" ]]; then
-	echo "%{F$active}$metadata%{F-}"
-elif [[ $player_status = "Paused" ]]; then
-	echo "%{F$passive}$metadata%{F-}"
-else
-	echo ""
-fi
+scroll_size = 30
+scroll_position = 0
+scroll_count = 0
+scroll_velocity = 0
+
+update_duration = 1
+
+prev_time = time.time()
+
+config = f"{os.environ['HOME']}/.config/polybar/gruvbox.ini"
+
+cmd = f'grep "^light-text" {config}'
+active_color = str(subprocess.check_output(cmd, shell=True))[-10:-3]
+
+cmd = f'grep "^passive-text" {config}'
+passive_color = str(subprocess.check_output(cmd, shell=True))[2:-3]
+
+while True:
+	duration_cmd = "playerctl metadata --format '{{mpris:length}}'"
+	song_duration = str(subprocess.check_output(duration_cmd, shell=True))
+	song_duration = to_num(song_duration)
+
+	position_cmd = "playerctl metadata --format '{{position}}'"
+	position = str(subprocess.check_output(position_cmd, shell=True))
+	position = to_num(position)
+
+	current_pct = (position / song_duration) * 100
+
+	cmd = "playerctl metadata --format '{{title}} / {{artist}}" + \
+	"'"
+	output = str(subprocess.check_output(cmd, shell=True))[2:-3]
+ 
+	# if len(output) > scroll_size:
+	# 	scroll_delta = len(output) - scroll_size
+
+	# 	if time.time() - prev_time > update_duration:
+	# 		if scroll_position == 0:
+	# 			scroll_velocity = 1
+	# 		elif scroll_position == scroll_delta:
+	# 			scroll_velocity = -1
+
+	# 		scroll_position += scroll_velocity
+
+	# 		prev_time = time.time()
+	# else:
+	# 	scroll_position = 0
+	
+	# output = f"{output[scroll_position:scroll_position+scroll_size]:30}"
+	# print(len(output), scroll_size)
+	# # output = output[:scroll_size]
+
+	output += " ┝"
+
+	for i in range(1, 26):
+		if i*4 < current_pct:
+			output += "━"
+		else:
+			output += "┄"
+
+	playing_check = str(subprocess.check_output(
+	    "playerctl status", shell=True))[2:-3]
+	if playing_check == "Playing":
+		output = "%{F" + active_color + "}  " + output + "┤%{F-}"
+	else:
+		output = " "
+
+	with open("music-output", "w") as f:
+		f.write(output)
+
+	time.sleep(0.5)
