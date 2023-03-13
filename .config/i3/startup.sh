@@ -1,7 +1,5 @@
 #!/bin/bash
-source ~/.bashrc
-source ~/.profile
-$HOME/.config/polybar/music &
+setxkbmap -layout us -option ctrl:swapcaps & 
 xpad &
 blueman-applet &
 wallpaper.sh &
