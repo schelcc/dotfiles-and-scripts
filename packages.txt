@@ -1,0 +1,15 @@
+# Current as of 3/13/2023, ubuntu 22.04.2
+sudo apt install \
+tmux \
+feh \
+playerctl \
+xpad \
+git \
+vim \
+rxvt-unicode \
+curl \
+plocate \
+xclip \
+scrot \
+polybar \
+rofi
