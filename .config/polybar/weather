@@ -5,23 +5,7 @@ import requests
 import json
 import os
 
-config = configparser.ConfigParser()
 polybar_config = configparser.ConfigParser()
-
-location_selector = {
-	"EL" : {
-		"lat" : 42.7232292393843,
-		"long" : -84.46270361255876
-	},
-	"HOME" : {
-		"lat" : 42.351751559878366,
-		"long" : -83.91421804290647
-	},
-	"KZOO" : {
-		"lat" : 42.29194729847674, 
-		"long" : -85.61775192759157
-	}
-}
 
 '''
 
@@ -73,7 +57,6 @@ weathercode_selector = {
 }
 
 
-config.read(f"{os.environ['HOME']}/.config/polybar/script_config.ini")
 
 polybar_config.read(f"{os.environ['HOME']}/.config/polybar/gruvbox.ini")
 
@@ -81,12 +64,17 @@ active_color = polybar_config['colors']['light-text']
 
 alert_color = polybar_config['colors']['alert']
 
+
 try:
-	location = config['main']['location']
-	lat = location_selector[location]['lat']
-	long = location_selector[location]['long']
-except ValueError:
-	print(f"Location {config['main']['location']} unknown")
+	r = requests.get("https://ipinfo.io")
+	r_json = r.json()
+
+	lat, long = r_json['loc'].split(',')
+except:
+	output = "%{u" + alert_color + "}%{+u}" + "  "
+
+	print(output)
+	exit()
 
 URL = "https://api.open-meteo.com/v1/forecast?"+\
     f"latitude={lat}&longitude={long}"+\
