@@ -104,13 +104,12 @@ set $ws7 "7"
 set $ws8 "8"
 set $ws9 "9"
 set $ws10 "10"
-set $ws11 "11"
-set $ws12 "12"
 
-#monitor vairalbes
+# Monitors
 set $dleft "DP-2"
 set $dright "eDP-1"
 
+# Set workspace outputs
 workspace $ws1 output $dleft
 workspace $ws2 output $dleft
 workspace $ws3 output $dleft
@@ -121,9 +120,6 @@ workspace $ws7 output $dright
 workspace $ws8 output $dright
 workspace $ws9 output $dright
 workspace $ws10 output $dright
-#workspace $ws11 output $dright
-#workspace $ws12 output $dright
-
 
 # switch to workspace
 bindsym $mod+1 workspace number $ws1 
@@ -136,8 +132,6 @@ bindsym $mod+7 workspace number $ws7
 bindsym $mod+8 workspace number $ws8 
 bindsym $mod+9 workspace number $ws9 
 bindsym $mod+0 workspace number $ws10 
-#bindsym $mod+11 workspace number $ws11 
-#bindsym $mod+12 workspace number $ws12 
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace number $ws1 
@@ -150,9 +144,8 @@ bindsym $mod+Shift+7 move container to workspace number $ws7
 bindsym $mod+Shift+8 move container to workspace number $ws8 
 bindsym $mod+Shift+9 move container to workspace number $ws9 
 bindsym $mod+Shift+0 move container to workspace number $ws10 
-#bindsym $mod+Shift+11 move container to workspace number $ws11 
-#bindsym $mod+Shift+12 move container to workspace number $ws12 
 
+# Alternate between currently active and previously active workspaces
 bindsym $mod+Tab workspace back_and_forth
 
 # reload the configuration file
@@ -165,11 +158,14 @@ bindsym $mod+Shift+r restart
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
 
 # Music control
-bindsym $mod+F1 --release exec "playerctl play-pause --player=spotify"
-bindsym $mod+F3 exec "playerctl next --player=spotify"
-bindsym $mod+F2 exec "playerctl previous --player=spotify"
+bindsym $mod+F1 --release exec "playerctl play-pause"
+bindsym $mod+F3 exec "playerctl next"
+bindsym $mod+F2 exec "playerctl previous"
 
+# Google chrome keybind
 bindsym Ctrl+Shift+g --release exec "google-chrome"
+
+# Refresh/skip wallpaper
 bindsym Ctrl+Shift+b exec "wallpaper.sh"
 
 # lock screen
@@ -183,7 +179,8 @@ bindsym $mod+minus scratchpad show
 
 # gaps
 gaps inner 5
-#gaps outer 5
+
+# Account for polybar width - TODO : Fix in polybar and remove here
 gaps bottom 30
 
 # resize window (you can also use the mouse for that)
@@ -211,19 +208,20 @@ mode "resize" {
         bindsym $mod+r mode "default"
 }
 
+# Default xpad notes to floating
 for_window [class="^xpad"] floating toggle
-assign [class="^discord"] $ws2
-for_window [class="Spotify"] move to workspace $ws2
+
+# Default discord and spotify to workspace 2
+assign [class="^discord"] $ws10
+for_window [class="Spotify"] move to workspace $ws10
+
+# Default gnome-calculator to floating and throw on scratchpad
 for_window [class="^Gnome-calculator"] floating toggle move to scratchpad
+
+# Default any Tk instance to floating (temporary)
 for_window [class="^Tk"] floating toggle
 
-# experimental
-for_window [class="urxvt" instance="bluetoothctl"] move scratchpad
-
-
 bindsym $mod+r mode "resize"
-
-# colors       Border  CurBar  Curbar text
 
 # class                 border  backgr. text    indicator
 client.focused          #3c3836 #32302f #fabd2f #fabd2f
@@ -233,32 +231,4 @@ client.urgent           #7c6f64 #fabd2f #3c3836 #fabd2f
 
 # $i3-background
 exec_always --no-startup-id xsetroot -solid '#3c3836'
-
-
-
-# Start i3bar to display a workspace bar (plus the system information i3status
-# finds out, if available)
-
-#bar {
-#        status_command conky -c $HOME/.i3/conky/conkyrc
-#	mode dock
-#	position bottom
-#	font pango:open sans 8
-#	strip_workspace_numbers yes
-#	tray_output $dleft
-#	tray_output $dright
-#	status_command i3status
-#	
-# colors {
-#	background #504945
-#	statusline #d5c4a1
-#	separator #3c3836 
-#	focused_workspace #3c3836 #32302f #fabd2f
-#	active_workspace #3c3836 #504945 #d5c4a1
-#	inactive_workspace #3c3836 #504945 #d5c4a1
-#	urgent_workspace   #7c6f64 #fabd2f #3c3836
-# }
-#	
-# }
-
 
