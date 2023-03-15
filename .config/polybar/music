@@ -15,7 +15,7 @@ def to_num(input_str):
 	return (int(output_str))
 
 
-scroll_size = 30
+scroll_size = 45
 scroll_position = 0
 scroll_count = 0
 scroll_velocity = 0
@@ -46,7 +46,10 @@ while True:
 	cmd = "playerctl metadata --format '{{title}} / {{artist}}" + \
 	"'"
 	output = str(subprocess.check_output(cmd, shell=True))[2:-3]
- 
+
+	if len(output) > scroll_size:
+		output = output[:scroll_size] + "..."
+
 	# if len(output) > scroll_size:
 	# 	scroll_delta = len(output) - scroll_size
 

@@ -24,7 +24,7 @@ moderate_threshold = 20
 severe_threshold = 10
 immediate_threshold = 5
 
-max_capacity_pct = 84
+max_capacity_pct = 100
 
 capacity_symbols = ["","","","",""]
 
