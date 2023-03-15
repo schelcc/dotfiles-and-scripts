@@ -153,6 +153,7 @@ bindsym $mod+Shift+0 move container to workspace number $ws10
 #bindsym $mod+Shift+11 move container to workspace number $ws11 
 #bindsym $mod+Shift+12 move container to workspace number $ws12 
 
+bindsym $mod+Tab workspace back_and_forth
 
 # reload the configuration file
 bindsym $mod+Shift+c reload
