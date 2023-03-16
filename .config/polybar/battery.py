@@ -13,7 +13,7 @@ from statuses import *
 HOME = environ['HOME']
 
 polybar_config = ConfigParser()
-polybar_config.read(f"{HOME}/.config/polybar/gruvbox.ini")
+polybar_config.read(f"{HOME}/.config/polybar/config.ini")
 
 foreground_color = polybar_config['colors']['light-text']
 underline_color = polybar_config['colors']['active-underline']

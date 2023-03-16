@@ -58,7 +58,7 @@ weathercode_selector = {
 
 
 
-polybar_config.read(f"{os.environ['HOME']}/.config/polybar/gruvbox.ini")
+polybar_config.read(f"{os.environ['HOME']}/.config/polybar/config.ini")
 
 active_color = polybar_config['colors']['light-text']
 

@@ -24,7 +24,7 @@ update_duration = 1
 
 prev_time = time.time()
 
-config = f"{os.environ['HOME']}/.config/polybar/gruvbox.ini"
+config = f"{os.environ['HOME']}/.config/polybar/config.ini"
 
 cmd = f'grep "^light-text" {config}'
 active_color = str(subprocess.check_output(cmd, shell=True))[-10:-3]
