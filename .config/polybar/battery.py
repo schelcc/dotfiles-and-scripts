@@ -51,7 +51,11 @@ adj_charge_pct = (charge_pct / max_capacity_pct) * 100
 adj_charge_pct = round(adj_charge_pct)
 symbol_index = (adj_charge_pct+5) // 25
 
-time_remaining_min = (energy_now / power_now) * 60
+try:
+	time_remaining_min = (energy_now / power_now) * 60
+except ZeroDivisionError:
+	time_remaining_min = 0
+
 H, M = divmod(time_remaining_min, 60)
 H, M = int(H), int(M)
 time_remaining_str = f"{H:>2}:{str(M).zfill(2)}"
@@ -61,6 +65,7 @@ if is_charging:
 
 if is_charging and adj_charge_pct >= 99:
 	underline_color = full_color
+	symbol_index = len(capacity_symbols)-1
 
 if not is_charging and adj_charge_pct <= 15:
 	underline_color = alert_color
