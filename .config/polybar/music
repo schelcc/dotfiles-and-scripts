@@ -5,7 +5,7 @@ from math import trunc
 import os
 import time
 from datetime import datetime
-
+from sys import argv
 
 def to_num(input_str):
 	output_str = ""
@@ -15,7 +15,7 @@ def to_num(input_str):
 	return (int(output_str))
 
 
-scroll_size = 45
+#scroll_size = 45
 scroll_position = 0
 scroll_count = 0
 scroll_velocity = 0
@@ -32,59 +32,47 @@ active_color = str(subprocess.check_output(cmd, shell=True))[-10:-3]
 cmd = f'grep "^passive-text" {config}'
 passive_color = str(subprocess.check_output(cmd, shell=True))[2:-3]
 
-while True:
-	duration_cmd = "playerctl metadata --format '{{mpris:length}}'"
-	song_duration = str(subprocess.check_output(duration_cmd, shell=True))
-	song_duration = to_num(song_duration)
+duration_cmd = "playerctl metadata --format '{{mpris:length}}'"
+song_duration = str(subprocess.check_output(duration_cmd, shell=True))
+song_duration = to_num(song_duration)
 
-	position_cmd = "playerctl metadata --format '{{position}}'"
-	position = str(subprocess.check_output(position_cmd, shell=True))
-	position = to_num(position)
+position_cmd = "playerctl metadata --format '{{position}}'"
+position = str(subprocess.check_output(position_cmd, shell=True))
+position = to_num(position)
 
-	current_pct = (position / song_duration) * 100
+current_pct = (position / song_duration) * 100
 
-	cmd = "playerctl metadata --format '{{title}} / {{artist}}" + \
-	"'"
-	output = str(subprocess.check_output(cmd, shell=True))[2:-3]
+cmd = "playerctl metadata --format '{{title}} / {{artist}}" + \
+"'"
+output = str(subprocess.check_output(cmd, shell=True))[2:-3]
 
-	if len(output) > scroll_size:
-		output = output[:scroll_size] + "..."
+scroll_size = 45 if argv[1] == "0" else 80
 
-	# if len(output) > scroll_size:
-	# 	scroll_delta = len(output) - scroll_size
+if len(output) > scroll_size:
+	output = output[:scroll_size] + "..."
 
-	# 	if time.time() - prev_time > update_duration:
-	# 		if scroll_position == 0:
-	# 			scroll_velocity = 1
-	# 		elif scroll_position == scroll_delta:
-	# 			scroll_velocity = -1
+output += " ┝"
 
-	# 		scroll_position += scroll_velocity
 
-	# 		prev_time = time.time()
-	# else:
-	# 	scroll_position = 0
-	
-	# output = f"{output[scroll_position:scroll_position+scroll_size]:30}"
-	# print(len(output), scroll_size)
-	# # output = output[:scroll_size]
-
-	output += " ┝"
-
+if argv[1] == "0":
 	for i in range(1, 26):
 		if i*4 < current_pct:
 			output += "━"
 		else:
 			output += "┄"
+elif argv[1] == "1":
+	for i in range(1, 51):
+		if i*2 < current_pct:
+			output += "━"
+		else:
+			output += "┄"
 
-	playing_check = str(subprocess.check_output(
-	    "playerctl status", shell=True))[2:-3]
-	if playing_check == "Playing":
-		output = "%{F" + active_color + "}  " + output + "┤%{F-}"
-	else:
-		output = " "
+playing_check = str(subprocess.check_output(
+    "playerctl status", shell=True))[2:-3]
 
-	with open("music-output", "w") as f:
-		f.write(output)
+if playing_check == "Playing":
+	output = "%{F" + active_color + "}  " + output + "┤%{F-}"
+else:
+	output = " "
 
-	time.sleep(0.5)
+print(output)
