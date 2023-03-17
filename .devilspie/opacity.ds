@@ -15,3 +15,12 @@
 ( spawn_async (str "transset -i " (window_xid) " 0.85" ))
 )
 )
+
+( if
+( or
+( contains ( window_class ) "polybar" )
+)
+( begin
+( spawn_async (str "transset -i " (window_xid) " 0.85" ))
+)
+)

@@ -1,6 +1,6 @@
 #!/bin/bash
 setxkbmap -layout us -option ctrl:swapcaps & 
-picom &
+compositor-startup.sh
 devilspie &
 xpad &
 blueman-applet &
