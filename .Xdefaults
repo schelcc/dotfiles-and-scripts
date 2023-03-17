@@ -76,8 +76,8 @@
 
 URxvt*transparent: false
 URxvt*shading: 20
-URxvt*background: #2B2B2B
-URxvt*foreground: #DEDEDE
+URxvt*background: #3c3836
+URxvt*foreground: #d5c4a1
 URxvt*font: xft:Ubuntu Mono:size=11,style=regular
 URxvt*boldFont: xft:Ubuntu Mono:bold:size=11,style=bold
 URxvt*saveLines: 12000
@@ -97,26 +97,26 @@ URxvt*colorUL: #86a2be
 URxvt*color0  : #2E3436
 URxvt*color8  : #555753
 ! red
-URxvt*color1  : #CC0000
-URxvt*color9  : #EF2929
+URxvt*color1  : #CC241D
+URxvt*color9  : #FB4934
 ! green
-URxvt*color2  : #4E9A06
-URxvt*color10 : #8AE234
+URxvt*color2  : #98971A
+URxvt*color10 : #B8BB26
 ! yellow
-URxvt*color3  : #C4A000
-URxvt*color11 : #FCE94F
+URxvt*color3  : #D79921
+URxvt*color11 : #FABD2f
 ! blue
-URxvt*color4  : #3465A4
-URxvt*color12 : #729FCF
+URxvt*color4  : #458588
+URxvt*color12 : #83A598
 ! magenta
-URxvt*color5  : #75507B
-URxvt*color13 : #AD7FA8
+URxvt*color5  : #B16286
+URxvt*color13 : #D3869B
 ! cyan
-URxvt*color6  : #06989A
-URxvt*color14 : #34E2E2
+URxvt*color6  : #689D6A
+URxvt*color14 : #8EC07C
 ! white
-URxvt*color7  : #D3D7CF
-URxvt*color15 : #EEEEEC
+URxvt*color7  : #A89984
+URxvt*color15 : #EBDBB2
 
 ! ------------------------------------------------------------------------------
 ! ROFI Color theme
