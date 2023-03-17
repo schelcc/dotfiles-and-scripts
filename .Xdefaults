@@ -74,7 +74,7 @@
 ! URxvt*reverseVideo: True
 ! URxvt*scrollBar: False
 
-URxvt*transparent: true
+URxvt*transparent: false
 URxvt*shading: 20
 URxvt*background: #2B2B2B
 URxvt*foreground: #DEDEDE
