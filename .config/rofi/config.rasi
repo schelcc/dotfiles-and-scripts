@@ -2,6 +2,7 @@ configuration {
 	yoffset: 5;
 	xoffset: 5;
 	run-shell-command: "/usr/bin/urxvt -e {cmd}";
+	modi: "run,ssh,filebrowser";
 	sidebar-mode: true;
 	parse-hosts: false;
 	parse-known-hosts: true;
@@ -16,4 +17,4 @@ configuration {
       sorting-method:    "name";
   }
 }
-@theme "/usr/share/rofi/themes/gruvbox-dark.rasi"
+@theme "gruvbox-dark.rasi"
