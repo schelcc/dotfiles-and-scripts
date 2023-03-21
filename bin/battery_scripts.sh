@@ -20,7 +20,6 @@ then
 	xrandr --output $MONITOR --brightness 0.3
 elif [[ $severity -eq -1 ]]
 then
-	# Undo battery saver changes if plugged in
-	xrandr --output $MONITOR --brightness 1.0
+	# Actively charging	
 fi
 

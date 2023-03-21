@@ -4,7 +4,7 @@
 xrandr --auto
 
 LAPTOP=eDP-1
-EXTERNAL=DP-2
+EXTERNAL=DP-3
 
 dock_check=$(xrandr --listactivemonitors|grep $EXTERNAL)
 

@@ -46,7 +46,7 @@ cmd = "playerctl metadata --format '{{title}} / {{artist}}" + \
 "'"
 output = str(subprocess.check_output(cmd, shell=True))[2:-3]
 
-scroll_size = 45 if argv[1] == "0" else 80
+scroll_size = 20 if argv[1] == "0" else 80
 
 if len(output) > scroll_size:
 	output = output[:scroll_size] + "..."

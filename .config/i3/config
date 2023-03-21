@@ -106,7 +106,7 @@ set $ws9 "9"
 set $ws10 "10"
 
 # Monitors
-set $dleft "DP-2"
+set $dleft "DP-3"
 set $dright "eDP-1"
 
 # Set workspace outputs
