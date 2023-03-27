@@ -31,9 +31,12 @@ floating_modifier $mod
 # start a terminal
 bindsym $mod+Return exec urxvt
 
-#show and hide notepads
+# show and hide notepads
 bindsym $mod+p exec "xpad -t"
 bindsym $mod+n exec "xpad -n"
+
+# Show bluetooth device manager
+bindsym $mod+b --release exec blueman-manager
 
 # kill focused window
 bindsym $mod+Shift+q kill
