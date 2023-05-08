@@ -5,8 +5,8 @@ devilspie &
 xpad &
 blueman-applet &
 wallpaper.sh &
-xscreensaver &
+xscreensaver --no-splash &
 spotify &
 discord &
 gnome-calculator &
-
+keepassxc &
