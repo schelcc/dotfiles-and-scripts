@@ -6,6 +6,7 @@ import os
 import time
 from datetime import datetime
 from sys import argv
+from polybar_print import polybar_print
 
 def to_num(input_str):
 	output_str = ""
@@ -23,14 +24,6 @@ scroll_velocity = 0
 update_duration = 1
 
 prev_time = time.time()
-
-config = f"{os.environ['HOME']}/.config/polybar/config.ini"
-
-cmd = f'grep "^light-text" {config}'
-active_color = str(subprocess.check_output(cmd, shell=True))[-10:-3]
-
-cmd = f'grep "^passive-text" {config}'
-passive_color = str(subprocess.check_output(cmd, shell=True))[2:-3]
 
 duration_cmd = "playerctl metadata --format '{{mpris:length}}'"
 song_duration = str(subprocess.check_output(duration_cmd, shell=True))
@@ -71,8 +64,9 @@ playing_check = str(subprocess.check_output(
     "playerctl status", shell=True))[2:-3]
 
 if playing_check == "Playing":
-	output = "%{F" + active_color + "}  " + output + "┤%{F-}"
+	output = output + "┤"
 else:
-	output = " "
+	print("")
+	exit()
 
-print(output)
+print(polybar_print(output))

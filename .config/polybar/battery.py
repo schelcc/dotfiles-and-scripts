@@ -12,13 +12,13 @@ from statuses import *
 
 HOME = environ['HOME']
 
-polybar_config = ConfigParser()
-polybar_config.read(f"{HOME}/.config/polybar/config.ini")
+#polybar_config = ConfigParser()
+#polybar_config.read(f"{HOME}/.config/polybar/config.ini")
 
-foreground_color = polybar_config['colors']['light-text']
-underline_color = polybar_config['colors']['active-underline']
-alert_color = polybar_config['colors']['alert']
-full_color = polybar_config['colors']['success']
+#foreground_color = polybar_config['colors']['light-text']
+#underline_color = polybar_config['colors']['active-underline']
+#alert_color = polybar_config['colors']['alert']
+#full_color = polybar_config['colors']['success']
 
 moderate_threshold = 20
 severe_threshold = 10
@@ -61,14 +61,15 @@ H, M = int(H), int(M)
 time_remaining_str = f"{H:>2}:{str(M).zfill(2)}"
 
 if is_charging:
+	underline_color = 'accent'
 	symbol_index = trunc(time() % 5)
 
 if is_charging and adj_charge_pct >= 99:
-	underline_color = full_color
+	underline_color = 'success'
 	symbol_index = len(capacity_symbols)-1
 
 if not is_charging and adj_charge_pct <= 15:
-	underline_color = alert_color
+	underline_color = 'alert'
 	symbol_index = floor((time() % 3)/1.5)*(len(capacity_symbols)-1)
 	
 
@@ -78,7 +79,7 @@ charge_time_remaining_output = f"{capacity_symbols[symbol_index]}{time_remaining
 toggle = check_status("battery")
 
 if toggle == "0":
-	print(polybar_print(charge_pct_output, foreground_color=foreground_color, underline_color=underline_color))
+	print(polybar_print(charge_pct_output, ul_key=underline_color))
 elif toggle == "1":
-	print(polybar_print(charge_time_remaining_output, foreground_color=foreground_color, underline_color=underline_color))
+	print(polybar_print(charge_time_remaining_output))
 

@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-import configparser
+from polybar_print import polybar_print
 import requests
 import json
 import os
-
-polybar_config = configparser.ConfigParser()
 
 '''
 
@@ -58,12 +56,6 @@ weathercode_selector = {
 
 
 
-polybar_config.read(f"{os.environ['HOME']}/.config/polybar/config.ini")
-
-active_color = polybar_config['colors']['light-text']
-
-alert_color = polybar_config['colors']['alert']
-
 
 try:
 	r = requests.get("https://ipinfo.io")
@@ -71,9 +63,9 @@ try:
 
 	lat, long = r_json['loc'].split(',')
 except:
-	output = "%{u" + alert_color + "}%{+u}" + "  "
+	output = "  "
 
-	print(output)
+	print(polybar_print(output))
 	exit()
 
 URL = "https://api.open-meteo.com/v1/forecast?"+\
@@ -94,8 +86,8 @@ try:
 	weathercode = r_json['current_weather']['weathercode']
 	weather_symbol = weathercode_selector[weathercode]
 
-	output = "%{F" + active_color + "}" + f" {weather_symbol} {temperature} F " + "%{F-}"
+	output = f" {weather_symbol} {temperature} F "
 except:
-    output = "%{u" + alert_color + "}%{+u}" + " 󰅤 "
+    output = " 󰅤 "
     
-print(output)
+print(polybar_print(output))
