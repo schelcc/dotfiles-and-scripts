@@ -60,6 +60,8 @@ H, M = divmod(time_remaining_min, 60)
 H, M = int(H), int(M)
 time_remaining_str = f"{H:>2}:{str(M).zfill(2)}"
 
+underline_color = 'accent'
+
 if is_charging:
 	underline_color = 'accent'
 	symbol_index = trunc(time() % 5)

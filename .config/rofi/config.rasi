@@ -1,7 +1,7 @@
 configuration {
 	yoffset: 5;
 	xoffset: 5;
-	run-shell-command: "/usr/bin/urxvt -e {cmd}";
+	run-shell-command: "/usr/bin/alacritty -e {cmd}";
 	modi: "run,ssh,filebrowser";
 	sidebar-mode: true;
 	parse-hosts: false;

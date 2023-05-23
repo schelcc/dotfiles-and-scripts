@@ -6,6 +6,9 @@ font pango:monospace 8
 # screen before suspend. Use loginctl lock-session to lock your screen.
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 
+# Launch polybar
+exec_always --no-startup-id $HOME/.config/polybar/launch.sh
+
 # and nm-applet is a desktop environment-independent system tray GUI for it.
 exec --no-startup-id nm-applet
 
@@ -22,21 +25,27 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 bindsym XF86MonBrightnessUp exec increase_brightness
 bindsym XF86MonBrightnessDown exec decrease_brightness
 
+# Toggle light and dark mode
+bindsym $mod+Shift+t exec "light_dark.py"
+
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec urxvt
+bindsym $mod+Return exec alacritty
 
-#show and hide notepads
+# show and hide notepads
 bindsym $mod+p exec "xpad -t"
 bindsym $mod+n exec "xpad -n"
+
+# Show bluetooth device manager
+bindsym $mod+b --release exec blueman-manager
 
 # kill focused window
 bindsym $mod+Shift+q kill
 
 # start dmenu (a program launcher)
-bindsym $mod+d exec dmenu_run
+bindsym $mod+d exec rofi -config ~/.config/rofi/config.rasi -no-lazy-grab -scroll-method 1 -show run
 
 # change focus
 bindsym $mod+j focus left
@@ -101,13 +110,12 @@ set $ws7 "7"
 set $ws8 "8"
 set $ws9 "9"
 set $ws10 "10"
-set $ws11 "11"
-set $ws12 "12"
 
-#monitor vairalbes
-set $dleft "DP-2"
+# Monitors
+set $dleft "DP-3"
 set $dright "eDP-1"
 
+# Set workspace outputs
 workspace $ws1 output $dleft
 workspace $ws2 output $dleft
 workspace $ws3 output $dleft
@@ -118,9 +126,6 @@ workspace $ws7 output $dright
 workspace $ws8 output $dright
 workspace $ws9 output $dright
 workspace $ws10 output $dright
-#workspace $ws11 output $dright
-#workspace $ws12 output $dright
-
 
 # switch to workspace
 bindsym $mod+1 workspace number $ws1 
@@ -133,8 +138,6 @@ bindsym $mod+7 workspace number $ws7
 bindsym $mod+8 workspace number $ws8 
 bindsym $mod+9 workspace number $ws9 
 bindsym $mod+0 workspace number $ws10 
-#bindsym $mod+11 workspace number $ws11 
-#bindsym $mod+12 workspace number $ws12 
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace number $ws1 
@@ -147,25 +150,28 @@ bindsym $mod+Shift+7 move container to workspace number $ws7
 bindsym $mod+Shift+8 move container to workspace number $ws8 
 bindsym $mod+Shift+9 move container to workspace number $ws9 
 bindsym $mod+Shift+0 move container to workspace number $ws10 
-#bindsym $mod+Shift+11 move container to workspace number $ws11 
-#bindsym $mod+Shift+12 move container to workspace number $ws12 
 
+# Alternate between currently active and previously active workspaces
+bindsym $mod+Tab workspace back_and_forth
 
 # reload the configuration file
 bindsym $mod+Shift+c reload
 
 # restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
-bindsym $mod+Shift+r restart
+bindsym $mod+Shift+r exec "i3-msg restart && compositor-startup.sh"
 
 # exit i3 (logs you out of your X session)
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
 
 # Music control
-bindsym $mod+F1 --release exec "playerctl play-pause --player=spotify"
-bindsym $mod+F3 exec "playerctl next --player=spotify"
-bindsym $mod+F2 exec "playerctl previous --player=spotify"
+bindsym $mod+F1 --release exec "playerctl play-pause"
+bindsym $mod+F3 exec "playerctl next"
+bindsym $mod+F2 exec "playerctl previous"
 
+# Google chrome keybind
 bindsym Ctrl+Shift+g --release exec "google-chrome"
+
+# Refresh/skip wallpaper
 bindsym Ctrl+Shift+b exec "wallpaper.sh"
 
 # lock screen
@@ -179,9 +185,9 @@ bindsym $mod+minus scratchpad show
 
 # gaps
 gaps inner 5
-gaps outer 5
 
-smart_gaps on
+# Account for polybar width - TODO : Fix in polybar and remove here
+gaps bottom 30
 
 # resize window (you can also use the mouse for that)
 mode "resize" {
@@ -208,38 +214,23 @@ mode "resize" {
         bindsym $mod+r mode "default"
 }
 
+# Default xpad notes to floating
 for_window [class="^xpad"] floating toggle
-assign [class="^discord"] $ws2
-for_window [class="Spotify"] move to workspace $ws2
+
+# Default discord and spotify to workspace 2
+assign [class="^discord"] $ws10
+for_window [class="Spotify"] move to workspace $ws10
+
+# Default gnome-calculator to floating and throw on scratchpad
 for_window [class="^Gnome-calculator"] floating toggle move to scratchpad
+
+# Default any Tk instance to floating (temporary)
 for_window [class="^Tk"] floating toggle
-
-# experimental
-for_window [class="urxvt" instance="bluetoothctl"] move scratchpad
-
 
 bindsym $mod+r mode "resize"
 
-# colors       Border  CurBar  Curbar text
+## THEME ##
 
-# $i3-theme-window
-
-
-# Start i3bar to display a workspace bar (plus the system information i3status
-# finds out, if available)
-
-bar {
-        status_command conky -c $HOME/.i3/conky/conkyrc
-	mode dock
-	position bottom
-	font pango:open sans 8
-	strip_workspace_numbers yes
-	tray_output $dleft
-	tray_output $dright
-	status_command i3status
-	
-	# $i3-theme-bar
-	
-}
-
+# $i3-background
+exec_always --no-startup-id xsetroot -solid '#3c3836'
 
