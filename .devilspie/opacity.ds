@@ -3,7 +3,7 @@
 ( contains ( window_class ) "URxvt" )
 )
 ( begin
-( spawn_async (str "transset -i " (window_xid) " 0.75" ))
+( spawn_async (str "transset -i " (window_xid) " 0.90" ))
 )
 )
 
@@ -16,11 +16,4 @@
 )
 )
 
-( if
-( or
-( contains ( window_class ) "obsidian" )
-)
-( begin
-( spawn_async (str "transset -i " (window_xid) " 0.87" ))
-)
-)
+

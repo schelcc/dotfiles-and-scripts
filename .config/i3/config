@@ -32,7 +32,7 @@ bindsym $mod+Shift+t exec "light_dark.py"
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec alacritty
+bindsym $mod+Return exec $TERMINAL
 
 # show and hide notepads
 bindsym $mod+p exec "xpad -t"
@@ -172,7 +172,7 @@ bindsym $mod+F2 exec "playerctl previous"
 bindsym Ctrl+Shift+g --release exec "google-chrome"
 
 # Refresh/skip wallpaper
-bindsym Ctrl+Shift+b exec "wallpaper.sh"
+bindsym Ctrl+Shift+b exec "background-manager"
 
 # lock screen
 bindsym Ctrl+$mod+l exec "xscreensaver-command -lock"
@@ -184,7 +184,7 @@ bindsym $mod+Shift+minus move scratchpad
 bindsym $mod+minus scratchpad show
 
 # gaps
-gaps inner 5
+gaps inner 3
 
 # Account for polybar width - TODO : Fix in polybar and remove here
 gaps bottom 30
@@ -218,7 +218,8 @@ mode "resize" {
 for_window [class="^xpad"] floating toggle
 
 # Default discord and spotify to workspace 2
-assign [class="^discord"] $ws10
+assign [class="^discord"] $ws9
+assign [class="^slack"] $ws9
 for_window [class="Spotify"] move to workspace $ws10
 
 # Default gnome-calculator to floating and throw on scratchpad
@@ -227,16 +228,17 @@ for_window [class="^Gnome-calculator"] floating toggle move to scratchpad
 # Default any Tk instance to floating (temporary)
 for_window [class="^Tk"] floating toggle
 
+# Default border pixel to 1
+default_border pixel 1
+default_floating_border pixel 1
+for_window [class="^.*"] border pixel 1
+
 bindsym $mod+r mode "resize"
 
-
-# class                 border  backgr. text    indicator
-client.focused          #3c3836 #32302f  #d79921     #d79921
-client.focused_inactive #3c3836 #594945 #d5c4a1 #594945
-client.unfocused        #3c3836 #594945 #d5c4a1 #594945
-client.urgent           #7c6f64      #d79921          #3c3836 #d79921
-
-
-# $i3-background
-exec_always --no-startup-id xsetroot -solid '#3c3836'
-
+#REPLACETAG#
+# class                 border    backgr.   text      indicator
+client.focused          #282828       #282828       #d79921       #d79921
+client.focused_inactive #1d2021   #1d2021   #d5c4a1   #1d2021
+client.unfocused        #1d2021   #1d2021   #d5c4a1   #1d2021
+client.urgent           #d79921           #d79921           #282828   #d79921
+#REPLACETAG#

@@ -32,7 +32,7 @@ bindsym $mod+Shift+t exec "light_dark.py"
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec alacritty
+bindsym $mod+Return exec $TERMINAL
 
 # show and hide notepads
 bindsym $mod+p exec "xpad -t"
@@ -172,7 +172,7 @@ bindsym $mod+F2 exec "playerctl previous"
 bindsym Ctrl+Shift+g --release exec "google-chrome"
 
 # Refresh/skip wallpaper
-bindsym Ctrl+Shift+b exec "wallpaper.sh"
+bindsym Ctrl+Shift+b exec "background-manager"
 
 # lock screen
 bindsym Ctrl+$mod+l exec "xscreensaver-command -lock"

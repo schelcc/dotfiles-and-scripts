@@ -11,15 +11,9 @@ dock_check=$(xrandr --listactivemonitors|grep $EXTERNAL)
 if [[ $dock_check == "" ]]; then
 	xrandr --output $LAPTOP --mode 1920x1200 --scale 1.0x1.0
 else
-	xrandr --output $LAPTOP --primary --mode 1920x1200 --pos 2400x0 --rotate normal --scale 0.85x0.85 \
-		--output $EXTERNAL --mode 1920x1080 --pos 0x0 --rotate normal --scale 1.25x1.25
+	xrandr --output $LAPTOP --off --output $EXTERNAL --mode 3440x1440
 fi
 
-# Swap caps and LCtrl - Do this because when ws_dock is run there is also a new keyboard attached
-setxkbmap -layout us -option ctrl:swapcaps
+background-manager &
 
-i3-msg restart
-
-$HOME/.config/polybar/launch.sh &
-
-wallpaper.sh &
+$HOME/.config/polybar/launch.sh

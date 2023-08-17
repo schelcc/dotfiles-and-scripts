@@ -79,6 +79,8 @@ with open(HOME + "/.config/Code/User/settings.json", "w") as f:
 # alacritty
 os.system(f"cp {HOME}/.config/alacritty/alacritty-{color_suffix}.yml {HOME}/.config/alacritty/alacritty.yml") 
 
+
+
 os.system('i3-msg restart')
 os.system('killall dunst')
 os.system('/usr/bin/dunst')

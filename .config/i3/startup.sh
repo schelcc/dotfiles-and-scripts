@@ -1,10 +1,9 @@
 #!/bin/bash
-setxkbmap -layout us -option ctrl:swapcaps & 
-compositor-startup.sh
+compositor-startup.sh * 
 devilspie &
 xpad &
 blueman-applet &
-wallpaper.sh &
+background-manager &
 xscreensaver --no-splash &
 spotify &
 discord &
