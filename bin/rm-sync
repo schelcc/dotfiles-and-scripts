@@ -1,0 +1,389 @@
+#!/usr/bin/env python3
+import json
+import subprocess
+import requests
+from operator import itemgetter
+import os
+import sys, getopt
+from configparser import ConfigParser
+
+class GlobalSettings:
+    def __init__(self):
+        self.verbose = False
+        self.vverbose = False
+        self.pdf_output_path = "."
+        self.respect_path = True
+
+        self.ip = "10.11.99.1"
+        self.rsync_host = "remarkable-wired"
+        self.local_sync_path = "/mnt/remarkable-backup/"
+        self.remote_sync_path = "/home/root/.local/share/remarkable/xochitl/"
+        self.itemize = False
+        self.dry_run = False
+        
+        self.HOME = os.environ['HOME']
+        
+        try:
+            self.parse_config(os.path.join(os.environ['HOME'], ".config", "rm-sync.conf"))
+        except FileNotFoundError:
+            print("Error: Config not found, going with default values. You can create a new config at $HOME/.config/rm-sync.conf with the \"--dump-config\" flag")
+        
+    def parse_config(self, path):
+        config = ConfigParser()
+        
+        config.read(path)
+        config = config['General']
+        
+        self.verbose = config.getboolean('verbose', False)
+        self.vverbose = config.getboolean('vverbose', False)
+        self.respect_path = config.getboolean('respect_path', True)
+        self.itemize = config.getboolean('itemize', False)
+        self.dry_run = config.getboolean('dry_run', False)
+        
+        self.pdf_output_path = config.get('pdf_output_path', os.path.join(self.HOME, 'Documents', 'rm-sync'))
+        self.ip = config.get('ip', '10.11.99.1')
+        self.rsync_host = config.get('rsync_host', 'remarkable')
+        self.local_sync_path = config.get('local_sync_path', '/mnt/remarkable-backup/')
+        self.remote_sync_path = config.get('remote_sync_path', '/home/root/.local/share/remarkable/xochitl/')
+        
+SETTINGS = GlobalSettings()
+
+def sync_raw():
+    """Using rsync, sync the raw data files on the remarkable to the configured location"""
+    if SETTINGS.verbose:
+        print("syncing")
+    
+    dry_run_suffix = "--dry-run" if SETTINGS.dry_run else ""
+    
+    # Execute rsync command
+    rsync_cmd = f"rsync -ai {SETTINGS.rsync_host}:{SETTINGS.remote_sync_path}* {SETTINGS.local_sync_path} {dry_run_suffix}"
+    rsync_stdout = str(subprocess.check_output(rsync_cmd, shell=True))[2:-3]
+
+    # Process updated files by grabbing just uuids
+    updated_files = rsync_stdout.split('\\n')
+    if updated_files != ['']:
+        updated_files = [x.split(' ')[1] for x in updated_files]
+
+        # Use a set to make sure we don't have repeat uuids
+        updated_files = set([x[:36] for x in updated_files])
+
+    if SETTINGS.dry_run:
+            print("DRY RUN ENABLED - NO FILES CHANGED")
+
+    if SETTINGS.itemize:
+        print("\n".join(updated_files))
+
+    if SETTINGS.verbose:
+        if updated_files != ['']:
+            file_summary = "\n- "
+            file_summary += "\n- ".join(updated_files)
+            print(f"Updated files: {file_summary}")
+        else:
+            print(f"No files updated")
+
+    return updated_files
+
+def cmd_to_json(cmd):
+    """Execute some shell command which should be parsed to JSON"""
+    
+    output = subprocess.check_output(cmd, shell=True)
+    output = str(output)[2:-3]
+    output = output.replace("\\n", "")
+    items = json.loads(output)
+    return items
+
+def list_folder(folder_guid):
+    """Request the contents of a specified CollectionType folder"""
+
+    # Shell out here because the ui returns an array of JSON elements which 
+    # is parsed most easily by jq on the command line
+    cmd = f"curl --silent http://{SETTINGS.ip}/documents/{folder_guid}" + \
+        " | jq -r --raw-output 'map({(.ID): {VissibleName,Type,ModifiedClient,Parent,tags}}) | add'"
+        
+    items = cmd_to_json(cmd)
+    
+    if SETTINGS.vverbose:
+        print(f"list folder {folder_guid}")
+        print(items)
+    
+    return items
+
+def download_document(doc_guid):
+    """Request a specified document and return the resulting bytes"""
+    
+    url = f"http://{SETTINGS.ip}/download/{doc_guid}/placeholder"
+    
+    r = requests.get(url, allow_redirects=True)
+    
+    if SETTINGS.vverbose:
+        print(f"downloaded {doc_guid}")
+    
+    return r.content
+
+def upload_document(file_path):
+    # TODO
+    pass
+
+def build_parent_guid_to_name_map():
+    """Build a map which matches all CollectionType folders to their fully qualified
+    human-readable name"""
+    
+    def recursed_tree_builder(parent, fully_qualified_parent):
+        if SETTINGS.vverbose:
+            print(f"building parent guid-to-name map for parent {parent} or {fully_qualified_parent}")
+        
+        items = list_folder(parent)
+        
+        # Construct a list of tuples which contain a CollectionType object guid and its visible name
+        collections = [(x, items[x]["VissibleName"]) for x in items if items[x]["Type"] == "CollectionType"]
+        
+        if len(collections) == 0:
+            return {}
+        
+        # Construct a dictionary matching each CollectionType to the fully qualified parent path
+        file_tree = {
+            x[0] : f"{fully_qualified_parent}{x[1]}/"
+            for x in collections
+        }
+        
+        for guid, name in collections:
+            full_parent = fully_qualified_parent + name + "/"
+            file_tree.update(recursed_tree_builder(guid, full_parent))
+            
+        return file_tree
+    
+    if SETTINGS.vverbose:
+        print("built parent guid-to-name map")
+    
+    output = recursed_tree_builder("", "")
+    output[''] = ''
+    
+    return output
+    
+def build_doc_guid_to_parent_map():
+    """Build a map to match DocumentType guids to their respective
+    parents"""
+    
+    # Get list of all collections
+    all_collections = list(build_parent_guid_to_name_map().keys())
+
+    # Make sure root is in there
+    all_collections.append("")
+    
+    all_docs = {}
+    
+    # For each document in each collection map the document to its parent in all_docs
+    for collection in all_collections:
+        items = list_folder(collection)
+        docs = [x for x in items if items[x]["Type"] == "DocumentType"]
+        
+        for doc in docs:
+            all_docs[doc] = collection
+    
+    if SETTINGS.vverbose:
+        print("built doc-guid-to-parent map")
+    
+    return all_docs
+    
+def save_pdf_with_name(guid):
+    """Render and save a PDF w/ a specified guid"""
+    
+    all_docs = build_doc_guid_to_parent_map()
+    cur_parent = all_docs[guid]
+    
+    name = list_folder(cur_parent)[guid]["VissibleName"]
+    
+    if SETTINGS.respect_path:
+        # construct_dirs() handles checking for existing dirs
+        construct_dirs()
+         
+        parent_map = build_parent_guid_to_name_map()
+        full_path = parent_map[cur_parent] + name + ".pdf"
+    else:
+        full_path = name + ".pdf" 
+        
+    write_path = os.path.join(SETTINGS.pdf_output_path, full_path)
+        
+    
+    with open(write_path, "wb") as f:
+        f.write(download_document(guid))
+    
+    if SETTINGS.verbose:
+        print(f"saved document {guid} with name {name} to {write_path}")
+        
+def construct_dirs():
+    """Construct the folder structure found on the reMarkable at the configured
+    output path"""
+    
+    parent_map = build_parent_guid_to_name_map()
+    
+    paths = parent_map.values()
+    
+    # Pair each path w/ its depth relative to the workspace root so that
+    # directories aren't made before their parent
+    path_depths = [(path, path.count("/")) for path in paths]
+    path_depths.sort(key=itemgetter(1))
+    
+    for path, _ in path_depths:
+        full_path = os.path.join(SETTINGS.pdf_output_path, path)
+        if SETTINGS.vverbose:
+            print(f"add directory {full_path}")
+
+        try:
+            os.mkdir(full_path)
+        except FileExistsError:
+            if SETTINGS.vverbose:
+                print(f"directory already exists")
+        
+    if SETTINGS.vverbose:
+        print("built directories")
+
+def save_all_pdfs():
+    """Render and save all PDFs on the reMarkable"""
+    
+    all_docs = build_doc_guid_to_parent_map()
+        
+    if SETTINGS.verbose:
+        print("saving all pdfs")
+    
+    for doc in all_docs.keys():
+        save_pdf_with_name(doc)    
+        
+
+HELP_MSG = """Usage: rm-sync [OPTION(s)]
+Description: Tool to interface with files on a reMarkable tablet over a network connection. Utilizes rsync for directly syncing
+the raw notebook files stored on the reMarkable. For everything else, the web-ui is used to make requests to for various
+tasks. As such, the web-ui must be enabled on the remarkable for any functions other than syncing to work.
+
+Resources:
+1. How to enable the reMarkable 2 web-ui
+    - https://www.joshualowcock.com/guide/how-to-access-the-remarkable-2-webui/
+2. Excellent guide to the API calls made as well as ways to make the web-ui function better
+    - https://remarkable.guide/tech/usb-web-interface.html#external-links
+
+
+Notes:
+- This script assumes you have a passwordless ssh-key set up for your tablet
+
+Args:
+    --local-sync-path=       Local backup directory (defaults to /mnt/remarkable-backup/)
+    --remote-sync-path=      Directory on the remarkable tablet (defaults to /home/root/.local/share/remarkable/xochitl/)
+    --pdf-output-path=       Where to save PDFs to (defaults to /mnt/remarkable-backup/RENDERED/)
+    --rsync-host=            Name of configured ssh host (defaults to remarkable-wired)
+    --ip=                    IP to request for webui requests (defaults to 10.11.99.1)
+    --respect-path=          Whether to respect a PDF's location on the tablet relative to the workspace root when copying
+                                pdfs over (defaults True)
+    --dump-config           Create a config w/ current (default if none specified) values at config
+                                location (default config location if -c/--config not specified)
+    
+    -c, --config            Config location (defaults to $HOME/.config/rm-sync.conf)
+    -v, --verbose           Whether to print status messages
+    -V, --vverbose          More verbose than -v
+    -i, --itemize           Print ONLY uuids processed (useful for counting updated files)
+                                cannot be used w/ -v/--verbose
+    -d, --dry-run           Run rsync with the "--dry-run" flag (run without copying files)
+    -r, --render-all        Request and render ALL notebooks rather than just updated notebooks
+    -s, --sync-only         Only sync files, don't render any notebooks
+    -h, --help              Display this message"""
+
+def main(argv):
+    try:
+        shortopts = "hvdrsic:V"
+        longopts = [
+            "local-sync-path=",
+            "remote-sync-path=",
+            "pdf-output-path=",
+            "rsync-host=",
+            "ip=",
+            "config=",
+            "respect-path="
+            "verbose",
+            "dry-run",
+            "render-all",
+            "sync-only",
+            "help",
+            "itemize",
+            "vverbose",
+            "dump-config",
+        ]
+        
+        opts, args = getopt.getopt(argv, shortopts, longopts)
+        
+    except getopt.GetoptError as e:
+        print(f"Error: {e.args[0]}.")
+        print(HELP_MSG)
+        sys.exit(2)
+        
+    render_all_bool = False
+    sync_only = False
+    
+    for opt, arg in opts:
+        # Do config first so that flags override config
+        if opt in ("-c", "--config"):
+            SETTINGS.parse_config(arg)
+
+        if opt == "--local-sync-path":
+            SETTINGS.local_sync_path = arg
+        
+        if opt == "--remote-sync-path":
+            SETTINGS.remote_sync_path = arg
+        
+        if opt == "--pdf-output-path":
+            SETTINGS.pdf_output_path = arg
+        
+        if opt == "--rsync-host":
+            SETTINGS.rsync_host = arg
+        
+        if opt == "--ip":
+            SETTINGS.ip = arg
+        
+        if opt == "--respect-path":
+            SETTINGS.respect_path = bool(arg)
+        
+        if opt in ("-v", "--verbose"):
+            SETTINGS.verbose = True
+            
+        if opt in ("-V", "--vverbose"):
+            SETTINGS.vverbose = True
+        
+        if opt in ("-d", "--dry-run"):
+            SETTINGS.dry_run = True
+        
+        if opt in ("-r", "--render-all"):
+            render_all_bool = True
+        
+        if opt in ("-h", "--help"):
+            print(HELP_MSG)
+            sys.exit()
+            
+        if opt in ("-i", "--itemize"):
+            SETTINGS.itemize = True
+            
+        if opt in ("-s", "--sync-only"):
+            sync_only = True
+            
+        if opt == "--dump-config":
+            raise NotImplementedError
+
+    if (SETTINGS.verbose or SETTINGS.vverbose) and SETTINGS.itemize:
+        print("Error: verbose and itemize flags enabled simultaneously. Only one may be enabled at once.")
+        sys.exit(2)
+        
+    if sync_only:
+        sync_raw()
+        sys.exit()
+        
+    if render_all_bool:
+        save_all_pdfs()
+
+    updated_files = sync_raw()
+    
+    if updated_files == ['']:
+        sys.exit()
+    
+    for f in updated_files:
+        save_pdf_with_name(f)
+    
+
+if __name__=="__main__":
+    main(sys.argv[1:])
