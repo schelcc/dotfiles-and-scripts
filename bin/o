@@ -1,0 +1,25 @@
+#!/bin/bash
+
+VAULT_PATH=$HOME/Documents/Obsidian
+TEMPLATE=$VAULT_PATH'/templates/quick note template.md'
+
+# Create temp file to write note to
+file=$(mktemp)
+
+# Open terminal w/ vim to edit temp file and create note
+# Name the terminal "Note jot" for window targeting purposes
+$TERMINAL -T "Note jot" -e vi $file
+
+# Grab first line of note and truncate to 15 characters for file title/link
+name=$(head -n 1 $file|sed 's/\(.\{15\}\).*/\1/')
+
+# Just for a prettier name with truncation ellipses iff the name is more than 15 chars
+pretty_name=$(head -n 1 $file|sed 's/\(.\{15\}\).*/\1.../')
+
+# Create a new note w/ the template then insert the note content
+cp "${TEMPLATE}" $VAULT_PATH'/Notes/Quick Notes/'"${name}"'.md'
+note_contents="$(cat $file)"
+sed -i 's/INSERT/'"${note_contents}"'/' $VAULT_PATH/Notes/Quick\ Notes/$name.md
+
+
+#sed -i '$a \r- [[\${name}\${pretty_name}]]' $MOC_PATH
