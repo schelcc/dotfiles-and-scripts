@@ -46,6 +46,23 @@ class GlobalSettings:
         self.local_sync_path = config.get('local_sync_path', '/mnt/remarkable-backup/')
         self.remote_sync_path = config.get('remote_sync_path', '/home/root/.local/share/remarkable/xochitl/')
         
+    def dump_config(self, path):
+        config = ConfigParser()
+        
+        config['General']['verbose'] = self.verbose
+        config['General']['vverbose'] = self.vverbose
+        config['General']['pdf_output_path'] = self.pdf_output_path
+        config['General']['respect_path'] = self.respect_path
+        config['General']['ip'] = self.ip
+        config['General']['rsync_host'] = self.rsync_host
+        config['General']['local_sync_path'] = self.local_sync_path
+        config['General']['remote_sync_path'] = self.remote_sync_path
+        config['General']['itemize'] = self.itemize
+        config['General']['dry_run'] = self.dry_run
+        
+        with open(path, "w") as f:
+            config.write(f)
+        
 SETTINGS = GlobalSettings()
 
 def sync_raw():
@@ -273,8 +290,8 @@ Args:
     --ip=                    IP to request for webui requests (defaults to 10.11.99.1)
     --respect-path=          Whether to respect a PDF's location on the tablet relative to the workspace root when copying
                                 pdfs over (defaults True)
-    --dump-config           Create a config w/ current (default if none specified) values at config
-                                location (default config location if -c/--config not specified)
+    --dump-config=           Create a config w/ current (default if none specified) values at specified
+                                location (defaults same as default config location if not specified)
     
     -c, --config            Config location (defaults to $HOME/.config/rm-sync.conf)
     -v, --verbose           Whether to print status messages
@@ -304,7 +321,7 @@ def main(argv):
             "help",
             "itemize",
             "vverbose",
-            "dump-config",
+            "dump-config=",
         ]
         
         opts, args = getopt.getopt(argv, shortopts, longopts)
@@ -362,8 +379,8 @@ def main(argv):
         if opt in ("-s", "--sync-only"):
             sync_only = True
             
-        if opt == "--dump-config":
-            raise NotImplementedError
+        if opt in "--dump-config":
+            SETTINGS.dump_config(arg)
 
     if (SETTINGS.verbose or SETTINGS.vverbose) and SETTINGS.itemize:
         print("Error: verbose and itemize flags enabled simultaneously. Only one may be enabled at once.")

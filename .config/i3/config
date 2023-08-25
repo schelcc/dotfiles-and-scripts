@@ -228,6 +228,9 @@ for_window [class="^Gnome-calculator"] floating toggle move to scratchpad
 # Default any Tk instance to floating (temporary)
 for_window [class="^Tk"] floating toggle
 
+# Make the quick note terminal float
+for_window [title="Note jot"] floating toggle
+
 # Default border pixel to 1
 default_border pixel 1
 default_floating_border pixel 1
