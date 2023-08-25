@@ -222,8 +222,9 @@ def save_pdf_with_name(guid):
     write_path = os.path.join(SETTINGS.pdf_output_path, full_path)
         
     
-    with open(write_path, "wb") as f:
-        f.write(download_document(guid))
+    if not SETTINGS.dry_run:
+        with open(write_path, "wb") as f:
+            f.write(download_document(guid))
     
     if SETTINGS.verbose:
         print(f"saved document {guid} with name {name} to {write_path}")
@@ -292,6 +293,7 @@ Args:
                                 pdfs over (defaults True)
     --dump-config=           Create a config w/ current (default if none specified) values at specified
                                 location (defaults same as default config location if not specified)
+    --download-file=        Download a specific file identified by its GUID
     
     -c, --config            Config location (defaults to $HOME/.config/rm-sync.conf)
     -v, --verbose           Whether to print status messages
@@ -322,6 +324,7 @@ def main(argv):
             "itemize",
             "vverbose",
             "dump-config=",
+            "download-file="
         ]
         
         opts, args = getopt.getopt(argv, shortopts, longopts)
@@ -379,8 +382,12 @@ def main(argv):
         if opt in ("-s", "--sync-only"):
             sync_only = True
             
-        if opt in "--dump-config":
+        if opt == "--dump-config":
             SETTINGS.dump_config(arg)
+            
+        if opt == "--download-file":
+            save_pdf_with_name(arg)
+            sys.exit()
 
     if (SETTINGS.verbose or SETTINGS.vverbose) and SETTINGS.itemize:
         print("Error: verbose and itemize flags enabled simultaneously. Only one may be enabled at once.")
