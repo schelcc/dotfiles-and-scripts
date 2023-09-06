@@ -118,7 +118,8 @@ def list_folder(folder_guid):
         " | jq -r --raw-output 'map({(.ID): {VissibleName,Type,ModifiedClient,Parent,tags}}) | add'"
         
     items = cmd_to_json(cmd)
-    
+   
+
     if SETTINGS.vverbose:
         print(f"list folder {folder_guid}")
         print(items)
@@ -206,6 +207,13 @@ def save_pdf_with_name(guid):
     """Render and save a PDF w/ a specified guid"""
     
     all_docs = build_doc_guid_to_parent_map()
+
+    # Pretty sure the only what this can happen is if the altered doc is a CollectionType
+    if guid not in all_docs.keys():
+        if SETTINGS.verbose:
+            print(f"Skipping saving of document {guid} as it is not a recognized document (it may be a folder)")
+            return
+
     cur_parent = all_docs[guid]
     
     name = list_folder(cur_parent)[guid]["VissibleName"]
