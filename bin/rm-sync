@@ -104,9 +104,13 @@ def cmd_to_json(cmd):
     """Execute some shell command which should be parsed to JSON"""
     
     output = subprocess.check_output(cmd, shell=True)
-    output = str(output)[2:-3]
+    # output = str(output)[2:-3]
+    output = output.decode("utf-8")
     output = output.replace("\\n", "")
-    items = json.loads(output)
+    try:
+        items = json.loads(output)
+    except:
+        breakpoint()
     return items
 
 def list_folder(folder_guid):
@@ -116,9 +120,14 @@ def list_folder(folder_guid):
     # is parsed most easily by jq on the command line
     cmd = f"curl --silent http://{SETTINGS.ip}/documents/{folder_guid}" + \
         " | jq -r --raw-output 'map({(.ID): {VissibleName,Type,ModifiedClient,Parent,tags}}) | add'"
-        
+    
+    # try:
     items = cmd_to_json(cmd)
-   
+    # except Exception as e:
+    #     breakpoint()
+
+    if items is None:
+        items = {}
 
     if SETTINGS.vverbose:
         print(f"list folder {folder_guid}")
