@@ -19,15 +19,19 @@ OIFS="$IFS"
 IFS=$'\n'
 for f in `find $ATTACHMENT_PATH -type f -name "*.pdf" -print`
 do
-    vault_rel_path=$(echo $f | sed 's/.pdf//' | sed 's/\.\///')
-    cur_note=$VAULT_PATH/$vault_rel_path.md
+    vault_rel_path=$(echo "${f#$VAULT_PATH}")
+    fname=$(echo $f | sed 's/.pdf//' | sed 's/\.\///')
+    fname=$(basename $fname)
+    cur_note=$VAULT_PATH''reMarkable/$fname.md
+    echo ""
+    echo $f
+    echo $fname
+    echo $vault_rel_path
+    echo $cur_note
+    echo ""
     if [ ! -f $cur_note ]; then
-        note_dir=$(dirname $cur_note)
-        if [ ! -d $note_dir ]; then
-            mkdir -p $note_dir
-        fi
 
-        template='status:: #📔\ntag-tags::\nlink-tags::\n___\n\n![[Attachments/reMarkable/'"${vault_rel_path}"'.pdf]]\n\n___\nReferences:\n'
+        template='status:: 📔\ntag-tags::\nlink-tags::\n___\n\n![['"${vault_rel_path}"']]\n\n___\nReferences:\n'
         echo -e $template >> $cur_note
     fi
 done

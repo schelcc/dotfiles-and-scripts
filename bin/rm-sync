@@ -103,14 +103,15 @@ def sync_raw():
 def cmd_to_json(cmd):
     """Execute some shell command which should be parsed to JSON"""
     
-    output = subprocess.check_output(cmd, shell=True)
+    raw_output = subprocess.check_output(cmd, shell=True)
     # output = str(output)[2:-3]
-    output = output.decode("utf-8")
+    output = raw_output.decode("utf-8")
     output = output.replace("\\n", "")
     try:
         items = json.loads(output)
-    except:
-        breakpoint()
+    except Exception as e:
+        print(f"Error: {e}\nOffending command: {cmd}\nCommand output: {output}")
+        exit()
     return items
 
 def list_folder(folder_guid):
