@@ -9,3 +9,4 @@ spotify &
 discord &
 gnome-calculator &
 keepassxc &
+emacs --daemon &
