@@ -20,8 +20,15 @@
 (setq custom-file "~/.config/emacs/custom.el")
 (load custom-file)
 
+(setq inhibit-startup-message t)
+(setq initial-scratch-message "") ;; Make scratch buffer blank
+
+(setq scroll-step 1
+      scroll-conservatively 1000) ; scroll-conservatively > 100 will make it scroll only enough to keep the cursor on screen
+
 ;; Display settings
 (load-theme 'gruvbox-dark-medium t)
+
 (scroll-bar-mode -1)
 (tool-bar-mode -1)
 (tooltip-mode -1)
@@ -29,12 +36,7 @@
 (set-fringe-mode 10)
 (global-display-line-numbers-mode t)
 
-(setq inhibit-startup-message t)
-
-(setq scroll-step 1
-      scroll-conservatively 1000) ; scroll-conservatively > 100 will make it scroll only enough to keep the cursor on screen
-
-(set-frame-font "Droid Sans Mono 9" nil t)
+(add-to-list 'default-frame-alist '(font . "Droid Sans Mono 9"))
 
 ;; Add recently edited files minor-mode
 (recentf-mode 1)
@@ -185,7 +187,13 @@
 (setq org-format-latex-options
       '(:foreground default :background default :scale 1.5 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[" )))
 
-;; Convenience keybinds
-;;(keymap-global-set "C-c P" (lambda () (interactive) (switch-to-buffer (find-file "~/.config/emacs/init.el")))) ; Open config on C-c P
+(setq org-roam-capture-templates
+      '(
+	("d" "default node" plain "%?"
+	 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+			  "#+title: ${title}\n")
+	 :unnarrowed t)
+	))
 
+;; Load keymaps
 (load "~/.config/emacs/keys.el")
