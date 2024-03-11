@@ -34,13 +34,16 @@
   "s" #'scratch-buffer
   "o" #'scratch-org
   "S" #'scratch-spice
-  "m" #'buffer-menu)
+  "m" #'buffer-menu
+  "%" #'split-window-right
+  "\"" #'split-window-below)
 
 (defvar-keymap global-prefix-map
   :doc "Global custom prefix map"
   "o" `("Org IO Keybinds" . ,org-io-map)
   "f" `("File IO keybinds" . ,file-io-map)
   "b" `("Buffer & Options" . ,buffer-menu-map)
-  "l" #'company-complete)
+  "l" #'company-complete
+  "t" #'neotree-toggle)
 
 (keymap-set global-map "C-SPC" global-prefix-map)
