@@ -158,7 +158,7 @@
 	 :empty-lines 0)
 	("m" "Meeting"
 	 entry (file+datetree "~/org/meetings.org")
-	 "* %? :meeting:%^g \n:Created: %T\n** Attendees\n*** \n** Action Items\n*** TODO [#A] "
+	 "* %? :meeting:%^g \n:Created: %T\n** \n** Action Items"
 	 :tree-type week
 	 :empty-lines 0)
 	))
@@ -194,6 +194,10 @@
 			  "#+title: ${title}\n")
 	 :unnarrowed t)
 	))
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((python . t)))
 
 ;; Load keymaps
 (load "~/.config/emacs/keys.el")
