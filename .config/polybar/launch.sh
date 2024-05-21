@@ -2,9 +2,15 @@
 
 killall -q polybar
 
-monitor_poll=$(xrandr|grep "DP-3"|grep " disconnected")
+monitor_poll=$(xrandr|grep "DP-3-1"|grep " disconnected")
 
 echo "---" | tee -a /tmp/polybar1.log /tmp/polybar2.log
+
+if [[ $monitor_poll == "" ]]; then
+    export PRIMARY_MONITOR=DP-3-1
+else
+    export PRIMARY_MONITOR=eDP-1
+fi
 
 #if [[ $monitor_poll == "" ]]; then
 #	export LEFT_MONITOR=DP-3
