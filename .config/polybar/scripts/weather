@@ -2,8 +2,11 @@
 
 from polybar_print import polybar_print
 import requests
-import json
-import os
+import logging
+
+logging.basicConfig(filename="weather.log",
+                    format="%asctime)s %(message)s",
+                    filemode='w')
 
 '''
 
@@ -57,19 +60,20 @@ weathercode_selector = {
 
 
 
-# try:
-r = requests.get("https://ipinfo.io")
-r_json = r.json()
+try:
+    r = requests.get("https://ipinfo.io")
+    r_json = r.json()
 
-lat, long = r_json['loc'].split(',')
-# except:
-# 	output = "  "
+    lat, lon = r_json['loc'].split(',')
 
-# 	print(polybar_print(output))
-# 	exit()
+except Exception as err:
+    logging.warning(f"Exception raised upon determining lat/lon : {err}")
+    output = "  "
+    print(polybar_print(output))
+    exit()
 
 URL = "https://api.open-meteo.com/v1/forecast?"+\
-    f"latitude={lat}&longitude={long}"+\
+    f"latitude={lat}&longitude={lon}"+\
     "&hourly=temperature_2m,weathercode"+\
     "&current_weather=true"+\
     "&temperature_unit=fahrenheit"+\
@@ -78,16 +82,18 @@ URL = "https://api.open-meteo.com/v1/forecast?"+\
     "&timeformat=unixtime"+\
     "&timezone=America%2FChicago"
 
-# try:
 r = requests.get(URL)
 r_json = r.json() 
 
 temperature = r_json['current_weather']['temperature']
 weathercode = r_json['current_weather']['weathercode']
-weather_symbol = weathercode_selector[weathercode]
+try:
+    weather_symbol = weathercode_selector[weathercode]
+except Exception as err:
+    logging.warning(f"Unhandled weather code: {err}")
+    weather_symbol = ""
+    
 
 output = f" {weather_symbol} {temperature} F "
-# except:
-#     output = " 󰅤 "
-    
+
 print(polybar_print(output))

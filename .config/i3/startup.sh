@@ -10,3 +10,5 @@ discord &
 gnome-calculator &
 keepassxc &
 emacs --daemon &
+parcellite &
+org_agenda.sh &

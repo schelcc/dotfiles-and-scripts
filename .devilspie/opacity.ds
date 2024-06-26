@@ -16,6 +16,7 @@
 )
 )
 
+
 ( if
 ( or
 ( contains ( window_class ) "Emacs" )
@@ -24,5 +25,4 @@
 ( spawn_async (str "transset -i " (window_xid) " 0.90" ))
 )
 )
-
 

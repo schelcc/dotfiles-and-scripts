@@ -1,3 +1,14 @@
+(use-package helpful
+  :commands (helpful-callable helpful-variable helpful-command helpful-key)
+  :custom
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
+  :bind
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-command] . helpful-command)
+  ([remap descripe-variable] . counsel-describe-variable)
+  ([remap describe-key] . helpful-key))
+
 (defun open-config () (interactive)
        (switch-to-buffer (find-file "~/.config/emacs/init.el")))
 
@@ -11,6 +22,19 @@
 (defun scratch-spice () (interactive)
        (switch-to-buffer (scratch-buffer))
        (spice-mode))
+
+(setq currently-dark nil)
+(defun theme-swap ()
+    (interactive)
+    (if currently-dark
+	(progn
+	    (load-theme 'gruvbox-light-soft t)
+	    (setq currently-dark nil))
+	(progn
+	    (load-theme 'gruvbox-dark-medium t)
+	    (setq currently-dark t))))
+
+;;(setq vterm-mode-map "C-c <escape>" #'evil-normal-state)
 
 ;; Custom prefixes for various things
 (defvar-keymap file-io-map
@@ -36,7 +60,8 @@
   "S" #'scratch-spice
   "m" #'buffer-menu
   "%" #'split-window-right
-  "\"" #'split-window-below)
+  "\"" #'split-window-below
+  "K" #'kill-buffer)
 
 (defvar-keymap global-prefix-map
   :doc "Global custom prefix map"
@@ -44,6 +69,13 @@
   "f" `("File IO keybinds" . ,file-io-map)
   "b" `("Buffer & Options" . ,buffer-menu-map)
   "l" #'company-complete
-  "t" #'neotree-toggle)
+  "t" #'neotree-toggle
+  "T" 'theme-swap)
 
 (keymap-set global-map "C-SPC" global-prefix-map)
+
+;; Adding to other maps
+(define-key evil-window-map (kbd "]") #'centaur-tabs-forward-tab)
+(define-key evil-window-map (kbd "[") #'centaur-tabs-backward-tab)
+(define-key evil-window-map (kbd "}") #'centaur-tabs-forward-group)
+(define-key evil-window-map (kbd "{") #'centaur-tabs-backward-group)

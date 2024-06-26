@@ -1,3 +1,6 @@
+;; Move the annoying custom snippets out to custom.el
+(setq custom-file "~/.config/emacs/custom.el")
+(load custom-file)
 ;; Package management
 (require 'package)
 
@@ -16,15 +19,33 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-;; Move the annoying custom snippets out to custom.el
-(setq custom-file "~/.config/emacs/custom.el")
-(load custom-file)
+;; Make backup files write to ~/.saves/
+(setq backup-directory-alist `(("~/.saves")))
+(setq backup-by-copying t)
+(setq auto-save-file-name-transforms `((".*" "~/.saves/" t)))
 
+;; Add recently edited files minor-mode
+(recentf-mode 1)
+(setq recentf-max-menu-items 25)
+(setq recentf-max-saved-items 25)
+;;(keymap-global-set "C-x C-r" 'recentf-open-files)
+
+;; Use .bashrc for envvars (necessary for anything node/npm)
+(when (daemonp)
+  (exec-path-from-shell-initialize))
+
+(put 'narrow-to-region 'disabled nil)
+(put 'narrow-to-page 'disabled nil)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (setq inhibit-startup-message t)
 (setq initial-scratch-message "") ;; Make scratch buffer blank
 
 (setq scroll-step 1
       scroll-conservatively 1000) ; scroll-conservatively > 100 will make it scroll only enough to keep the cursor on screen
+
+;; Highlight currently horizontal line
+(global-hl-line-mode)
 
 ;; Display settings
 (load-theme 'gruvbox-dark-medium t)
@@ -33,18 +54,36 @@
 (tool-bar-mode -1)
 (tooltip-mode -1)
 (menu-bar-mode -1)
-(set-fringe-mode 10)
+(set-fringe-mode 0)
 (global-display-line-numbers-mode t)
 
 (add-to-list 'default-frame-alist '(font . "Droid Sans Mono 9"))
 
-;; Add recently edited files minor-mode
-(recentf-mode 1)
-(setq recentf-max-menu-items 25)
-(setq recentf-max-saved-items 25)
-;;(keymap-global-set "C-x C-r" 'recentf-open-files)
+;; Neotree configuration
+(use-package neotree
+  :config
+  (setq neo-theme (if (display-graphic-p) 'nerd 'arrow)))
 
-;; evil-mode configuration
+(use-package mood-line
+  :config
+  (mood-line-mode)
+
+  :custom
+  (mood-line-glyph-alist mood-line-glyphs-ascii)
+  (setq mood-line-format mood-line-format-default-extended))
+
+(use-package rainbow-delimiters
+  :config
+  (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+
+(use-package windresize)
+
+(use-package docker-compose-mode)
+(use-package dockerfile-mode)
+(use-package mermaid-mode)
+(use-package spice-mode)
+(use-package python-mode)
+
 (use-package evil
   :init
   (setq evil-want-keybinding nil)
@@ -52,17 +91,19 @@
   :config
   (evil-mode 1))
 
-
 (use-package evil-collection
   :after evil
   :config
   (evil-collection-init))
 
-;; Neotree configuration
-(use-package neotree)
-(setq neo-theme (if (display-graphic-p) 'nerd 'arrow))
+(use-package evil-org
+  :ensure t
+  :after org
+  :hook (org-mode . (lambda () evil-org-mode))
+  :config
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys))
 
-;; ivy configuration
 (use-package ivy
   :diminish
   :bind (("C-s" . swiper)
@@ -82,9 +123,17 @@
   :config
   (counsel-mode 1))
 
-(use-package company)
-;;(keymap-global-set "C-SPC" 'company-complete)
-(add-hook 'after-init-hook 'global-company-mode)
+(use-package company
+  :config
+  (setq company-idle-delay 0)
+  (setq company-tooltip-align-annotations t)
+  (setq company-tooltip-limit 4)
+  (setq company-dabbrev-minimum-length 4)
+  (setq company-dabbrev-other-buffers t)
+  
+  (setq company-backends '((company-capf company-dabbrev company-ispell)))
+  (setq company-transformers '(company-sort-by-occurrence company-sort-by-backend-importance))
+  (global-company-mode))
 
 (use-package ivy-prescient
   :after counsel
@@ -99,105 +148,54 @@
   :diminish which-key-mode
   :config
   (which-key-mode)
-  (setq which-key-idle-delay 1)) ;; delay before showing key guide 
-
-;; "helpful" configuration
-(use-package helpful
-  :commands (helpful-callable helpful-variable helpful-command helpful-key)
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
-  :bind
-  ([remap describe-function] . counsel-describe-function)
-  ([remap describe-command] . helpful-command)
-  ([remap descripe-variable] . counsel-describe-variable)
-  ([remap describe-key] . helpful-key))
+  (setq which-key-idle-delay 0)) ;; delay before showing key guide 
 
 ;; LSP / Progrmaming utility configuration section
+(use-package flycheck)
+
+(use-package lsp-ui
+  :commands lsp-ui-mode
+  :config
+  (setq lsp-ui-sideline-enable t)
+  (setq lsp-ui-sideline-show-code-actions t)
+  (setq lsp-ui-sideline-update-mode "line")
+  (setq lsp-ui-sideline-delay 0))
+
 (use-package lsp-mode
   :init
   (setq lsp-keymap-prefix "C-c l")
+  ;;(setq lsp-signature-render-documentation nil)
   :hook (
 	 ;;; (XXX-mode. lsp)
 	 (python-mode . lsp)
+	 (sh-mode . lsp) ; Requires shellcheck, shfmt
 	 (lsp-mode . lsp-enable-which-key-integration))
-  :commands lsp)
-
-(use-package lsp-ui
-  :commands lsp-ui-mode)
+  :commands lsp
+  :config
+  (setq lsp-pylsp-plugins-jedi-completion-enabled t)
+  (setq lsp-pylsp-plugins-jedi-completion-fuzzy t)
+  (setq lsp-pylsp-plugins-jedi-environment "/usr/bin/python3")
+  (setq lsp-inlay-hint-enable t))
 
 (use-package lsp-ivy
   :commands lsp-ivy-workspace-symbol)
 
-;; ORG CONFIGURATION
+(use-package elfeed
+  :config
+  (setq elfeed-feeds
+	'(("https://ludic.mataroa.blog/rss/" blog)))
 
-(setq org-agenda-files '("~/org"))
-(setq org-log-done 'time)
-(setq org-return-follows-link t)
-(add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-(add-hook 'org-mode-hook 'org-indent-mode)
+  (defface important-elfeed-entry
+    '((t :forefround "#f77"))
+    "Import Elfeed entries.")
+  (push '(important important-elfeed-entry)
+	elfeed-search-face-alist)
 
-;;(define-key global-map "\C-cl" 'org-store-link)
-;;(define-key global-map "\C-ca" 'org-agenda)
-;;(define-key global-map "\C-cc" 'org-capture)
-;;
-;;(define-key global-map "\C-cp" 'org-latex-preview)
+  (add-hook 'elfeed-new-entry-hook
+	    (elfeed-make-tagger :before "1 month ago" :remove 'unread)))
 
-(setq org-hide-emphasis-markers t)
-(add-hook 'org-mode-hook 'visual-line-mode)
+;; Org
+(load "~/.config/emacs/org.el")
 
-(setq org-capture-templates
-      '(
-	("j" "Work log entry"
-	 entry (file+datetree "~/org/work-log.org")
-	 "* %?"
-	 :empty-lines 0)
-	("t" "General To-Do"
-	 entry (file+headline "~/org/todos.org" "General Tasks")
-	 "* TODO [#B] %?\n:Created: %T\n "
-	 :empty-lines 0)
-	("m" "Meeting"
-	 entry (file+datetree "~/org/meetings.org")
-	 "* %? :meeting:%^g \n:Created: %T\n** \n** Action Items"
-	 :tree-type week
-	 :empty-lines 0)
-	))
-
-(setq org-todo-keywords
-      '((sequence
-	 "TODO(t)"
-	 "DOING(d)"
-	 "BLOCKED(b@)"
-	 "|"
-	 "COMPLETE(c!)"
-	))
-      )
-
-(setq org-todo-keyword-faces
-      '(
-	("TODO" . (:foreground "GoldenRod" :weight bold))
-	("DOING" . (:foreground "DeepPink" :weight bold))
-	("BLOCKED" . (:foreground "Red" :weight bold))
-	("COMPLETE" . (:foreground "LimeGreen" :weight bold))
-	))
-
-;; ORG-ROAM
-(setq org-roam-directory (file-truename "~/org/roam"))
-(org-roam-db-autosync-mode)
-(setq org-format-latex-options
-      '(:foreground default :background default :scale 1.5 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[" )))
-
-(setq org-roam-capture-templates
-      '(
-	("d" "default node" plain "%?"
-	 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-			  "#+title: ${title}\n")
-	 :unnarrowed t)
-	))
-
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((python . t)))
-
-;; Load keymaps
+;; Keys
 (load "~/.config/emacs/keys.el")
