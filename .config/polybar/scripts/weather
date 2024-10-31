@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
+import warnings
+warnings.filterwarnings("ignore")
 
 from polybar_print import polybar_print
 import requests
 import logging
+from subprocess import check_output
 
-logging.basicConfig(filename="weather.log",
-                    format="%asctime)s %(message)s",
-                    filemode='w')
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(filename="/home/schelcc/.config/polybar/scripts/weather.log",
+                    format="%(asctime)s %(message)s",
+		    level=logging.INFO)
 
 '''
 
@@ -31,13 +37,16 @@ weathercode_selector = {
 	1 : "󰖙", # Mainly clear
 	2 : "󰖐", # Partly cloudy
 	3 : "󰖐", # Overcast
-	45 : "", # Fog
-	48 : "", # Fog
-	51 : "", # Light drizzle
-	53 : "", # Moderate drizzle
-	55 : "", # Dense drizzle
-	56 : "", # Light freezing drizzle
-	57 : "", # Dense freezing drizzle
+
+	45 : "󰖑", # Fog
+	48 : "󰖑", # Fog
+
+	51 : "", # Light drizzle
+	53 : "", # Moderate drizzle
+	55 : "", # Dense drizzle
+
+	56 : "", # Light freezing drizzle
+	57 : "", # Dense freezing drizzle
 	61 : "", # Slight rain
 	63 : "", # Moderate rain
 	65 : "", # Heavy rain
@@ -57,17 +66,11 @@ weathercode_selector = {
 	99 : "󰖓" # Thunderstorm
 }
 
-
-
-
 try:
-    r = requests.get("https://ipinfo.io")
-    r_json = r.json()
-
-    lat, lon = r_json['loc'].split(',')
+    lat, lon = str(check_output("latlong.sh", shell=True))[2:-3].split(',')
 
 except Exception as err:
-    logging.warning(f"Exception raised upon determining lat/lon : {err}")
+    logger.warning(f"Exception raised upon determining lat/lon : {err}")
     output = "  "
     print(polybar_print(output))
     exit()
@@ -89,11 +92,13 @@ temperature = r_json['current_weather']['temperature']
 weathercode = r_json['current_weather']['weathercode']
 try:
     weather_symbol = weathercode_selector[weathercode]
+    logger.info(f"lat[{lat}] lon[{lon}] temp[{temperature}] Weathercode[{weathercode}]")
 except Exception as err:
-    logging.warning(f"Unhandled weather code: {err}")
+    logger.warning(f"Unhandled weather code: {err}")
     weather_symbol = ""
     
+weather_symbol = weathercode_selector[51]
 
-output = f" {weather_symbol} {temperature} F "
+output = f"{weather_symbol} {temperature} F"
 
 print(polybar_print(output))

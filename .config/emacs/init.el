@@ -55,7 +55,10 @@
 (tooltip-mode -1)
 (menu-bar-mode -1)
 (set-fringe-mode 0)
-(global-display-line-numbers-mode t)
+;;(global-display-line-numbers-mode relative)
+;; (setq display-line-numbers-type "relative")
+;; (global-display-line-numbers-mode t)
+(setq display-line-numbers 'relative)
 
 (add-to-list 'default-frame-alist '(font . "Droid Sans Mono 9"))
 
@@ -83,6 +86,9 @@
 (use-package mermaid-mode)
 (use-package spice-mode)
 (use-package python-mode)
+(use-package rust-mode)
+(use-package flycheck-rust)
+(use-package json-mode)
 
 (use-package evil
   :init
@@ -127,7 +133,7 @@
   :config
   (setq company-idle-delay 0)
   (setq company-tooltip-align-annotations t)
-  (setq company-tooltip-limit 4)
+  (setq company-tooltip-limit 8)
   (setq company-dabbrev-minimum-length 4)
   (setq company-dabbrev-other-buffers t)
   
@@ -168,22 +174,38 @@
   :hook (
 	 ;;; (XXX-mode. lsp)
 	 (python-mode . lsp)
-	 (sh-mode . lsp) ; Requires shellcheck, shfmt
-	 (lsp-mode . lsp-enable-which-key-integration))
+	 ;; (sh-mode . lsp) ; Requires shellcheck, shfmt ;; Something wrong, freezes client
+	 (rust-mode . lsp)
+	 (c-mode . lsp)
+	 (c++-mode . lsp)
+	 (lsp-mode . lsp-enable-which-key-integration)
+	 (lsp-mode . lsp-ui-mode))
   :commands lsp
   :config
+  ;;(setq lsp-clangd-
   (setq lsp-pylsp-plugins-jedi-completion-enabled t)
   (setq lsp-pylsp-plugins-jedi-completion-fuzzy t)
   (setq lsp-pylsp-plugins-jedi-environment "/usr/bin/python3")
-  (setq lsp-inlay-hint-enable t))
+  (setq lsp-inlay-hint-enable t)
+  (setq lsp-eldoc-enable-hover nil)
+  (setq lsp-signature-doc-lines 5)
+  (setq lsp-signature-render-documentation nil)
+  (setq lsp-signature-auto-activate nil))
 
 (use-package lsp-ivy
   :commands lsp-ivy-workspace-symbol)
 
+(use-package rustic
+  :ensure
+  :config
+  (setq rustic-format-on-save t))
+
 (use-package elfeed
   :config
+  (setq elfeed-search-title-max-width 120)
   (setq elfeed-feeds
-	'(("https://ludic.mataroa.blog/rss/" blog)))
+	'(("https://ludic.mataroa.blog/rss/" blog) 
+	  ("https://racer.com/indycar/feed/" racing)))
 
   (defface important-elfeed-entry
     '((t :forefround "#f77"))

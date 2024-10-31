@@ -131,4 +131,4 @@ rofi.fake-transparency: true
 ! HiDPI Settings
 ! 96 is the default (100%)
 ! 120:125% | 144:150% : 192:200%
-Xft.dpi: 120
+Xft.dpi: 96

@@ -1,4 +1,5 @@
 #!/bin/bash
+watchdev.sh &
 compositor-startup.sh * 
 devilspie &
 xpad &

@@ -15,6 +15,9 @@
 (defun open-key-config () (interactive)
        (switch-to-buffer (find-file "~/.config/emacs/keys.el")))
 
+(defun open-org-config () (interactive)
+       (switch-to-buffer (find-file "~/.config/emacs/org.el")))
+
 (defun scratch-org () (interactive)
        (switch-to-buffer (scratch-buffer))
        (org-mode))
@@ -43,13 +46,15 @@
   "P" #'open-config 
   "f" #'find-file
   "d" #'dired
-  "K" #'open-key-config)
+  "K" #'open-key-config
+  "O" #'open-org-config)
 
 (defvar-keymap org-io-map
   :doc "Keybind map for org stuff when not in org-mode"
   "a" 'org-agenda
   "c" 'org-capture
   "n" 'org-roam-capture
+  "f" 'org-roam-node-find
   "l" 'org-store-link
   "p" 'org-latex-preview)
 
@@ -68,14 +73,13 @@
   "o" `("Org IO Keybinds" . ,org-io-map)
   "f" `("File IO keybinds" . ,file-io-map)
   "b" `("Buffer & Options" . ,buffer-menu-map)
+  "e" #'elfeed
   "l" #'company-complete
   "t" #'neotree-toggle
   "T" 'theme-swap)
 
 (keymap-set global-map "C-SPC" global-prefix-map)
 
-;; Adding to other maps
-(define-key evil-window-map (kbd "]") #'centaur-tabs-forward-tab)
-(define-key evil-window-map (kbd "[") #'centaur-tabs-backward-tab)
-(define-key evil-window-map (kbd "}") #'centaur-tabs-forward-group)
-(define-key evil-window-map (kbd "{") #'centaur-tabs-backward-group)
+(setq text-scale-mode-step 1.2)
+(keymap-set global-map "C-=" 'text-scale-increase)
+(keymap-set global-map "C--" 'text-scale-decrease)
