@@ -1,7 +1,7 @@
 #!/bin/bash
 
 LAPTOP=eDP-1
-EXTERNAL=DP-3-1
+EXTERNAL=DP-2-1
 
 notify-send "ws_dock.sh" "(Un)Dock detected -- initializing new monitors"
 

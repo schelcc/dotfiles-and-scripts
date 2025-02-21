@@ -246,10 +246,12 @@ for_window [class="Spotify"] move to workspace $ws10
 for_window [class="^Gnome-calculator"] floating toggle move to scratchpad
 
 for_window [title="scratch_term"] floating toggle
+#for_window [class="^xpad"] floating toggle
 for_window [title="scratch_term"] resize set 800 500
 for_window [title="scratch_term"] move to scratchpad
 for_window [title="org_agenda_scratchpad"] move to scratchpad
 for_window [title="pavucontrol"] move to scratchpad
+for_window [title="^Zoom.*"] move to workspace $ws7
 
 # Default any Tk instance to floating (temporary)
 #for_window [class="^Tk"] floating toggle
