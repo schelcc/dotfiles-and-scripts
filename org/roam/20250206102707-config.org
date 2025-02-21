@@ -74,9 +74,6 @@ We'll only configure very basic interface and appearance settings now, saving th
 #+begin_src elisp
 (global-hl-line-mode)
 #+end_src
-#+begin_comment
-If you want to change the visual appearance of the hl-line, look at ~<M-x> describe-face <RET> hl-line~
-#+end_comment
 Now we'll disable the scroll bar, tool bar, tool tip, and menu bar -- after which we enable the fringe
 #+begin_src elisp
 (scroll-bar-mode -1)
@@ -84,10 +81,11 @@ Now we'll disable the scroll bar, tool bar, tool tip, and menu bar -- after whic
 (tooltip-mode -1)
 (menu-bar-mode -1)
 (set-fringe-mode 0)
+(setq scroll-conservatively most-positive-fixnum)
 #+end_src
-And finally we set the line numbering to be relative
+Line numbering only for programming-derived modes
 #+begin_src elisp
-(setq display-line-numbers 'relative)
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
 #+end_src
 ** Fonts (re-sort later)
 #+begin_src elisp
@@ -104,6 +102,12 @@ And finally we set the line numbering to be relative
 ** Theme (re-sort later)
 #+begin_src elisp
   (load-theme 'gruvbox-dark-medium t)
+#+end_src
+** Reload ~config.el~ from anywhere
+#+begin_src elisp
+(defun reload-config ()
+  (interactive)
+  (load "~/.config/emacs/init.el"))
 #+end_src
 * Keys
 I have a probably weird keybinding setup, but it's what makes sense to me. We choose to define these maps before we move on to packages so that we can leverage ~use-package~ to bake our package-specific keybinds into the package definitions. We'll also populate a few of these keymaps with binds unrelated to a package.
@@ -148,7 +152,8 @@ This keymap ~global-prefix-map~ is the *base* map that all prior keymaps will br
   :doc "Global custom prefix map"
   "o" `("Org IO Keybinds" . ,org-io-map)
   "f" `("File IO Keybinds" . ,file-io-map)
-  "b" `("Buffer & Options" . ,buffer-menu-map))
+  "b" `("Buffer & Options" . ,buffer-menu-map)
+  "r" 'reload-config)
 #+end_src
 ** Binding the maps (and the keys)
 This will include more later, but for now we'll just bind the ~global-prefix-map~ to =C-SPC=
@@ -359,9 +364,13 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 ** Roam
 *** General
 #+begin_src elisp
-  (setq org-roam-completion-everywhere t)
-  (setq org-roam-directory (file-truename "~/org/roam"))
-  (org-roam-db-autosync-mode)
+(use-package org-roam
+  :bind (:map org-io-map
+	      ("c" . 'org-roam-capture)
+	      ("f" . 'org-roam-node-find))
+  :config
+  (setq org-roam-completion-everywhere t
+	org-roam-directory (file-truename "~/org/roam")))
 #+end_src
 *** Capture
 #+begin_src elisp
@@ -388,6 +397,18 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 *** TODOs
 #+begin_src elisp
 (setq org-log-done 'time)
+(setq org-agenda-skip-deadline-if-done t)
+
+(setq org-todo-keywords
+      '((sequence
+	 "IDEA(i)"
+	 "TODO(t)"
+	 "INACTIVE(I)"
+	 "DOING(d)"
+	 "BLOCKED(b@)"
+	 "|"
+	 "COMPLETE(c!)"
+	 "NOT DOING(n!)")))
 #+end_src
 *** Packages
 **** ~org-roam-ql~
@@ -437,23 +458,16 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
       '(("cse331" . "~/org/roam/cse331.org")))
 #+end_src
 ** Agenda
-*** Appearance
+*** Packages
+**** ~org-super-agenda~
 #+begin_src elisp
-(set-face-foreground 'org-upcoming-deadline "goldenrod1")
-(set-face-foreground 'org-imminent-deadline "tomato1")
-
-(setq org-agenda-deadline-faces
-      '((1.0 . org-imminent-deadline)
-	(0.5 . org-upcoming-deadline)
-	(0.0 . org-upcoming-distant-deadline)))
-
-(setq org-agenda-window-setup "only-window")
-
-(setq org-agenda-span 'week)
-#+end_src
-*** Deadline warning
-#+begin_src elisp
-(setq org-deadline-warning-days 7)
+(use-package org-super-agenda
+  :hook (org-agenda-mode . org-super-agenda-mode)
+  :config
+  (setq org-super-agenda-groups
+	'((:log t)
+	    (:name "Today"
+		:scheduled today))))
 #+end_src
 *** Files
 #+begin_src elisp
@@ -467,39 +481,63 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 	(tags . " %i %-12:c")
 	(search . "%i %-12:c")))
 #+end_src
-*** Packages
-**** ~org-super-agenda~
+*** Appearance
 #+begin_src elisp
-(setq org-super-agenda-groups
-      '((:log t)
-	(:name "Schedule"
-	       :time-grid t)
-	(:name "Today"
-	       :scheduled today)
-	(:name (propertize "Due today" 'face 'italic)
-	       :deadline today)
-	(:name "Overdue"
-	       :deadline past)
-	(:name "Upcoming"
-	       :deadline future)
-	(:name "On the backburner"
-	       :todo ("SOMEDAY" "IDEA")
-	       :order 100)))
+(set-face-foreground 'org-upcoming-deadline "goldenrod1")
+(set-face-foreground 'org-imminent-deadline "tomato1")
+
+(setq org-agenda-deadline-faces
+      '((1.0 . org-imminent-deadline)
+	(0.5 . org-upcoming-deadline)
+	(0.0 . org-upcoming-distant-deadline)))
+
+(setq org-agenda-window-setup "only-window")
+
+(setq org-agenda-span 'week)
+
+(setq org-agenda-skip-deadline-if-done nil)
+(setq org-agenda-skip-function-global '(org-agenda-skip-entry-if 'todo 'done))
+
 #+end_src
-** Babel
-*** Misc
+*** Deadline warning
 #+begin_src elisp
-(setq org-src-window-setup 'split-window-below)
-(setq org-babel-python-command "python3")
-(setq org-confirm-babel-evaluate nil) ;; Don't ask to execute
+(setq org-deadline-warning-days 7)
+#+end_src
+*** Category prefix function
+#+begin_src elisp
+(defun my-org-category-prefix ()
+  (interactive)
+  (let*
+      ((category (org-entry-get (point) "CATEGORY"))
+       (fname (file-name-sans-extension (file-name-nondirectory (or (buffer-file-name) "nil")))))
+    (if (string-equal category fname)
+      "MISC"
+      category)))
+#+end_src
+
+** Babel
+*** General
+#+begin_src elisp
+(setq org-src-window-setup 'split-window-below
+      org-babel-python-command "python3"
+      org-confirm-babel-evaluate nil) ;; Don't ask to execute
 #+end_src
 *** Packages
 **** ~ob-mermaid~
 #+begin_src elisp
 (use-package ob-mermaid)
 #+end_src
+*** Languages
+#+begin_src elisp
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((mermaid . t)
+   (python . t)
+   (emacs-lisp . t)))
+#+end_src
 ** General appearance
 *** Lists
+Use a dot in place of a dash for items
 #+begin_src elisp
 (font-lock-add-keywords 'org-mode
 			'(("^ *\\([-]\\) "
@@ -510,6 +548,7 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 				 "•" ))))))
 #+end_src
 *** Indentation
+Indent contextually to outline node level, set indentation width per-indent to 4 spaces, replace ellipsis for folded headings with " ... "
 #+begin_src elisp
 (setq org-adapt-indentation t
       org-indent-indentation-per-level 4
@@ -517,6 +556,7 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 #+end_src
 *** Headings
 #+begin_src elisp
+Hide leading stars for headings, use UTF-8 symbols
 (setq org-hide-leading-stars t
       org-pretty-entities t)
 #+end_src
@@ -543,7 +583,7 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 **** ~org-bullets~
 #+begin_src elisp
 (use-package org-bullets
-  :hook (org-mode-hook . org-bullets-mode))
+  :hook (org-mode . org-bullets-mode))
 ;(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 #+end_src
 **** ~org-appear~
@@ -565,24 +605,32 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
   :ensure t
   :hook (org-mode . org-special-block-extras-mode))
 #+end_src
+**** ~olivetti~
+#+begin_src elisp
+(use-package olivetti
+  :hook (org-mode . olivetti-mode)
+  :config
+  (setq olivetti-body-width 0.70))
+#+end_src
 *** Faces (re-sort later)
 #+begin_src elisp
-  (with-eval-after-load 'org-faces
-    (progn
-      (set-face-attribute 'org-block nil :inherit 'fixed-pitch)
-      (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-      (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-      (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-      (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-      (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-      (set-face-attribute 'org-hide nil :inherit 'fixed-pitch)
-      ;; (set-face-attribute 'org-indent nil           :inherit '(org-hide fixed-pitch) :height 0.85)
-      ;; (set-face-attribute 'org-block-begin-line nil :inherit '(org-hide))
-      (set-face-attribute 'org-block-begin-line nil :extend t)
-      ;; (set-face-attribute 'org-block nil :background "#282828"))
-      (set-face-attribute 'org-block-end-line nil :extend t)))
+(with-eval-after-load 'org-faces
+  (progn
+    (set-face-attribute 'org-block nil :inherit 'fixed-pitch :height 0.85)
+    (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-hide nil :inherit 'fixed-pitch)
+    ;; (set-face-attribute 'org-block-begin-line nil :inherit '(org-hide))
+    (set-face-attribute 'org-block-begin-line nil :extend t)
+    ;; (set-face-attribute 'org-block nil :background "#282828"))
+    (set-face-attribute 'org-block-end-line nil :extend t))
+    (require 'org-indent)
+    (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch) :height 0.85))
 
-  (add-hook 'org-mode-hook 'variable-pitch-mode)
+(add-hook 'org-mode-hook 'variable-pitch-mode)
 #+end_src
 ** Export
 *** Packages
@@ -590,11 +638,25 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 #+begin_src elisp
 (require 'ox-md)
 #+end_src
-**** ~olivetti~
-#+begin_src elisp
-(use-package olivetti)
-#+end_src
 ** LaTeX
+*** Packages
+**** ~org-fragtog~
+#+begin_src elisp
+(use-package org-fragtog
+  :hook (org-mode . org-fragtog-mode))
+#+end_src
+*** Fragment formatting
+#+begin_src elisp
+(setq org-format-latex-options
+      '(:foreground default
+		    :background default
+		    :scale 2.0
+		    :html-foreground "Transparent"
+		    :html-background "Transparent"
+		    :html-scale 1.0
+		    :matchers ("begin" "$1" "$" "$$" "\\(" "\\[" )))
+#+end_src
+*** LaTeX Packages
 #+begin_src elisp
 (with-eval-after-load 'org 
      (add-to-list 'org-latex-packages-alist '("" "amsfonts" t))
@@ -603,49 +665,10 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
      (add-to-list 'org-latex-packages-alist '("" "amssymb" t))
      (setq org-format-latex-options 
            (plist-put org-format-latex-options :scale 0.80)))
-
-(setq org-startup-with-latex-preview t)
-(setq org-startup-with-inline-images t)
-
-(setq org-highlight-latex-and-related '(native))
-
-(setq org-format-latex-options
-      '(:foreground default
-		    :background default
-		    :scale 1.5
-		    :html-foreground "Transparent"
-		    :html-background "Transparent"
-		    :html-scale 1.0
-		    :matchers ("begin" "$1" "$" "$$" "\\(" "\\[" )))
-
-(add-hook 'org-babel-after-execute-hook 'org-display-inline-images) ;; Redisplay inline images after every org-babel run
-
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((mermaid . t)
-   (python . t)
-   (emacs-lisp . t)))
 #+end_src
-*** Packages
-**** ~org-fragtog~
+*** General
 #+begin_src elisp
-(use-package org-fragtog
-  :hook (org-mode-hook . org-fragtog-mode))
+(setq org-startup-with-inline-images t
+      org-startup-with-latex-preview t
+      org-highlight-latex-and-related '(native))
 #+end_src
-** Misc / Unsure of why I had it
-*** Outline in steps
-#+begin_src elisp
-(setq org-outline-path-complete-in-steps nil)
-#+end_src
-*** Category prefix function
-#+begin_src elisp
-(defun my-org-category-prefix ()
-  (interactive)
-  (let*
-      ((category (org-entry-get (point) "CATEGORY"))
-       (fname (file-name-sans-extension (file-name-nondirectory (or (buffer-file-name) "nil")))))
-    (if (string-equal category fname)
-      "MISC"
-      category)))
-#+end_src
-
