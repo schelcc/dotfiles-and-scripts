@@ -6,36 +6,26 @@
 #+filetags: :infrastructure:
 * Baseline configuration & setup
 ** Moving ~custom~ configurations out of ~init.el~
-Any time we change something via ~custom~, install a package, change theme, etc. ~custom~ will insert some text into our configuration -- lets move that out of ~init.el~ and into its own location ~custom.el~. ~custom~ needs to know where to store its changes, so we'll set ~custom-file~ and then load the file (i.e. execute the elisp contained inside).
 #+begin_src elisp
 (setq custom-file "~/.config/emacs/custom.el")
 (load custom-file)
 #+end_src
+** Ignore nativecomp warnings
+   #+begin_src elisp
+   (setq native-comp-async-report-warnings-errors nil)
+   #+end_src
 ** ~package~ setup
-First we'll load ~package~
 #+begin_src elisp
 (require `package)
-#+end_src
-Then we'll set the repositories for ~package~ to look through
-#+begin_src elisp
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-			 ("org"   . "https://orgmode.org/elpa/")
-			 ("elpa"  . "https://elpa.gnu.org/packages")))
-#+end_src
-Next we'll do basic ~package~ startup
-#+begin_src elisp
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")))
 (package-initialize)
 (unless package-archive-contents
   (package-refresh-contents))
 #+end_src
 ** ~use-package~ setup 
-We'll use ~use-package~, so first we'll install it if necessary
 #+begin_src elisp
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
-#+end_src
-Now we'll load it
-#+begin_src elisp
 (require 'use-package)
 (setq use-package-always-ensure t)
 #+end_src
@@ -97,11 +87,12 @@ Line numbering only for programming-derived modes
     (set-face-attribute 'fixed-pitch nil :family "Droid Sans Mono"))
 
   (when (member global-variable-pitch-font (font-family-list))
-    (set-face-attribute 'variable-pitch nil :family global-variable-pitch-font :height 0.9))
+    (set-face-attribute 'variable-pitch nil :family global-variable-pitch-font :height 1.0))
 #+end_src
 ** Theme (re-sort later)
 #+begin_src elisp
-  (load-theme 'gruvbox-dark-medium t)
+(setq custom-theme-load-path '("~/.config/emacs/emacs-theme-gruvbox"))
+(load-theme 'gruvbox-dark-medium t)
 #+end_src
 ** Reload ~config.el~ from anywhere
 #+begin_src elisp
@@ -109,8 +100,52 @@ Line numbering only for programming-derived modes
   (interactive)
   (load "~/.config/emacs/init.el"))
 #+end_src
+** Message completion
+#+begin_src elisp
+(message "Config-status: Completed baseline configuration & setup")
+#+end_src
+* Treesitter
+** Grammars
+#+begin_src elisp
+(setq treesit-language-source-alist
+   '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+     (cmake "https://github.com/uyha/tree-sitter-cmake")
+     (css "https://github.com/tree-sitter/tree-sitter-css")
+     (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+     (go "https://github.com/tree-sitter/tree-sitter-go")
+     (html "https://github.com/tree-sitter/tree-sitter-html")
+     (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+     (json "https://github.com/tree-sitter/tree-sitter-json")
+     (make "https://github.com/alemuller/tree-sitter-make")
+     (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+     (python "https://github.com/tree-sitter/tree-sitter-python")
+     (toml "https://github.com/tree-sitter/tree-sitter-toml")
+     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+     (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+#+end_src
+** Installation
+#+begin_src elisp
+;; (mapc #'treesit-install-language-grammar
+;;       (mapcar #'car treesit-language-source-alist))
+#+end_src
+** ~evil-textobj-tree-sitter~
+#+begin_src elisp
+(use-package evil-textobj-tree-sitter
+  :ensure t)
+;; bind `function.outer`(entire function block) to `f` for use in things like `vaf`, `yaf`
+(define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+;; bind `function.inner`(function block without name and args) to `f` for use in things like `vif`, `yif`
+(define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+
+;; You can also bind multiple items and we will match the first one we can find
+(define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
+#+end_src
+** Message completion
+#+begin_src elisp
+(message "Config-status: Completed treesitters")
+#+end_src
 * Keys
-I have a probably weird keybinding setup, but it's what makes sense to me. We choose to define these maps before we move on to packages so that we can leverage ~use-package~ to bake our package-specific keybinds into the package definitions. We'll also populate a few of these keymaps with binds unrelated to a package.
 ** Maps
 *** File IO
 This keymap ~file-io-map~ will define various basic file access & management tasks. No packages will add to this one, so we'll just populate all the keys we want and call it good
@@ -160,6 +195,10 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 #+begin_src elisp
 (keymap-set global-map "C-SPC" global-prefix-map)
 #+end_src
+** Message completion
+#+begin_src elisp
+(message "Config-status: Completed keys")
+#+end_src
 * Packages (excl. Org, LSP)
 ** ~neotree~
 #+begin_src elisp
@@ -168,6 +207,13 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 	      ("t" . 'neotree-toggle))
   :config
   (setq neo-theme (if (display-graphic-p) 'nerd 'arrow)))
+#+end_src
+** ~vmd~
+#+begin_src elisp
+(use-package vmd-mode
+  :hook (markdown-mode . vmd-mode)
+  :config
+  (setq vmd-binary-path "~/.config/nvm/versions/node/v20.14.0/bin/vmd"))
 #+end_src
 ** ~mood-line~
 #+begin_src elisp
@@ -248,6 +294,8 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 ** ~company~
 #+begin_src elisp
 (use-package company
+  :bind (:map global-prefix-map
+	      ("l" . 'company-complete))
   :config
   (setq company-idle-delay 0)
   (setq company-tooltip-align-annotations t)
@@ -287,6 +335,10 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 	    (elfeed-make-tagger :before "1 month ago" :remove 'unread)))
 #+end_src
 ** ~helpful~
+** Message completion
+#+begin_src elisp
+(message "Config-status: Completed packages")
+#+end_src
 * LSP 
 #+begin_src elisp
 (use-package lsp-mode
@@ -308,7 +360,7 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
   ;;(setq lsp-clients-clangd-args "-std=c++20")
   (setq lsp-pylsp-plugins-jedi-completion-enabled t)
   (setq lsp-pylsp-plugins-jedi-completion-fuzzy t)
-  (setq lsp-pylsp-plugins-jedi-environment "/usr/bin/python3")
+  (setq lsp-pylsp-plugins-jedi-environment "/home/schelcc/src/emacs-py-env")
   (setq lsp-eldoc-render-all nil)
   (setq lsp-inlay-hint-enable nil)
   (setq lsp-eldoc-enable-hover t)
@@ -353,6 +405,10 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
     :config
     (setq rustic-format-on-save t))
 #+end_src
+** Message completion
+#+begin_src elisp
+(message "Config-status: Completed LSP")
+#+end_src
 * Org
 ** Base behavior
 *** Hooks
@@ -362,36 +418,43 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 (add-hook 'org-mode-hook 'visual-line-mode)
 #+end_src
 ** Roam
-*** General
+*** ~use-package~ statement
 #+begin_src elisp
 (use-package org-roam
+  :init
+  (org-roam-db-autosync-mode)
   :bind (:map org-io-map
 	      ("c" . 'org-roam-capture)
 	      ("f" . 'org-roam-node-find))
   :config
-  (setq org-roam-completion-everywhere t
-	org-roam-directory (file-truename "~/org/roam")))
+  (require 'org-roam-export)
+  (setq org-roam-node-display-template
+	(concat "${title:*} "
+		(propertize "${tags:30}" 'face 'org-tag)
+		(propertize "${category:20}" 'face 'org-category)))
+  (setq org-roam-completion-everywhere t)
+  (setq org-roam-directory (file-truename "~/org/roam")))
 #+end_src
 *** Capture
 #+begin_src elisp
-  (add-hook 'org-capture-after-finalize-hook 'my-org-exit-frame-if-fleeting)
+(add-hook 'org-capture-after-finalize-hook 'my-org-exit-frame-if-fleeting)
 
-  (setq org-roam-capture-templates
-        '(
-          ("d" "default node" plain "%?"
-           :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                            "#+title: ${title}\n#+filetags: ${filetags}")
-           :unnarrowed t)
-          ("l" "lecture notes" plain
-          "* Lecture Notes\n- %?"
-          :target (file+head "lecture-notes/${title}.org"
-                      "#+filetags: lecture-%^{prompt||iss308|ece366|mth425|cse331|ece309} \n#+title: ${title}\n")
-          :unnarrowed t)
-          ("t" "todo" entry
-           "* TODO %?"
-           :target (node "todos")
-           :kill-buffer t)
-          ))
+(setq org-roam-capture-templates
+      '(
+        ("d" "default node" plain "%?"
+         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                          "#+title: ${title}\n#+filetags: ${filetags}")
+         :unnarrowed t)
+        ("l" "lecture notes" plain
+        "* Lecture Notes\n- %?"
+        :target (file+head "lecture-notes/${title}.org"
+                    "#+filetags: lecture-%^{prompt||iss308|ece366|mth425|cse331|ece309} \n#+title: ${title}\n")
+        :unnarrowed t)
+        ("t" "todo" entry
+         "* TODO %?"
+         :target (node "todos")
+         :kill-buffer t)
+        ))
 
 #+end_src
 *** TODOs
@@ -555,10 +618,9 @@ Indent contextually to outline node level, set indentation width per-indent to 4
       org-ellipsis " ... ")
 #+end_src
 *** Headings
-#+begin_src elisp
 Hide leading stars for headings, use UTF-8 symbols
-(setq org-hide-leading-stars t
-      org-pretty-entities t)
+#+begin_src elisp
+(setq org-hide-leading-stars t)
 #+end_src
 *** Source blocks
 #+begin_src elisp
@@ -607,10 +669,15 @@ Hide leading stars for headings, use UTF-8 symbols
 #+end_src
 **** ~olivetti~
 #+begin_src elisp
+(defun my-fix-fucking-olivetti ()
+  (interactive)
+  (olivetti-set-width 0.75))
+
 (use-package olivetti
-  :hook (org-mode . olivetti-mode)
-  :config
-  (setq olivetti-body-width 0.70))
+  :hook ((org-mode . olivetti-mode)
+	 (org-mode . my-fix-fucking-olivetti)))
+
+
 #+end_src
 *** Faces (re-sort later)
 #+begin_src elisp
@@ -622,11 +689,12 @@ Hide leading stars for headings, use UTF-8 symbols
     (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-hide nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-drawer nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-hide nil :inherit 'fixed-pitch))
     ;; (set-face-attribute 'org-block-begin-line nil :inherit '(org-hide))
-    (set-face-attribute 'org-block-begin-line nil :extend t)
+    ;; (set-face-attribute 'org-block-begin-line nil :inherit '(org-hide default))
     ;; (set-face-attribute 'org-block nil :background "#282828"))
-    (set-face-attribute 'org-block-end-line nil :extend t))
+    ;; (set-face-attribute 'org-block-end-line nil :extend t))
     (require 'org-indent)
     (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch) :height 0.85))
 
@@ -653,6 +721,7 @@ Hide leading stars for headings, use UTF-8 symbols
 		    :scale 2.0
 		    :html-foreground "Transparent"
 		    :html-background "Transparent"
+		    :justify 'right
 		    :html-scale 1.0
 		    :matchers ("begin" "$1" "$" "$$" "\\(" "\\[" )))
 #+end_src
@@ -664,11 +733,59 @@ Hide leading stars for headings, use UTF-8 symbols
      (add-to-list 'org-latex-packages-alist '("" "amsthm" t))
      (add-to-list 'org-latex-packages-alist '("" "amssymb" t))
      (setq org-format-latex-options 
-           (plist-put org-format-latex-options :scale 0.80)))
+           (plist-put org-format-latex-options :scale 1.4)))
+#+end_src
+*** Centering
+#+begin_src elisp
+;; specify the justification you want
+;; (plist-put org-format-latex-options :justify 'center)
+
+(defun org-justify-fragment-overlay (beg end image imagetype)
+  "Adjust the justification of a LaTeX fragment.
+The justification is set by :justify in
+`org-format-latex-options'. Only equations at the beginning of a
+line are justified."
+  (cond
+   ;; Centered justification
+   ((and (eq 'center (plist-get org-format-latex-options :justify)) 
+         (= beg (line-beginning-position)))
+    (let* ((img (create-image image 'imagemagick t))
+           (width (car (image-size img)))
+           (offset (floor (- (/ (window-text-width) 2) (/ width 2)))))
+      (overlay-put (ov-at) 'before-string (make-string offset ? ))))
+   ;; Right justification
+   ((and (eq 'right (plist-get org-format-latex-options :justify)) 
+         (= beg (line-beginning-position)))
+    (let* ((img (create-image image 'imagemagick t))
+           (width (car (image-display-size (overlay-get (ov-at) 'display))))
+           (offset (floor (- (window-text-width) width (- (line-end-position) end)))))
+      (overlay-put (ov-at) 'before-string (make-string offset ? ))))))
+
+(defun org-latex-fragment-tooltip (beg end image imagetype)
+  "Add the fragment tooltip to the overlay and set click function to toggle it."
+  (overlay-put (ov-at) 'help-echo
+               (concat (buffer-substring beg end)
+                       "mouse-1 to toggle."))
+  (overlay-put (ov-at) 'local-map (let ((map (make-sparse-keymap)))
+                                    (define-key map [mouse-1]
+                                      `(lambda ()
+                                         (interactive)
+                                         (org-remove-latex-fragment-image-overlays ,beg ,end)))
+                                    map)))
+
+(advice-add 'org--format-latex-make-overlay :after 'org-justify-fragment-overlay)
+(advice-add 'org--format-latex-make-overlay :after 'org-latex-fragment-tooltip)
 #+end_src
 *** General
 #+begin_src elisp
 (setq org-startup-with-inline-images t
       org-startup-with-latex-preview t
+      org-pretty-entities t
+      org-pretty-entities-include-sub-superscripts t
       org-highlight-latex-and-related '(native))
+#+end_src
+
+** Message completion
+#+begin_src elisp
+(message "Config-status: Completed Org")
 #+end_src
