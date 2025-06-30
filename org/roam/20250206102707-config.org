@@ -3,7 +3,7 @@
 :HEADER-ARGS: :tangle "~/.config/emacs/init.el"
 :END:
 #+title: config
-#+filetags: :infrastructure:
+#+filetags: :infrastructure:@todo:
 * Baseline configuration & setup
 ** Moving ~custom~ configurations out of ~init.el~
 #+begin_src elisp
@@ -36,7 +36,6 @@ We'll wanna grab the ~$PATH~ at startup
   (exec-path-from-shell-initialize))
 #+end_src
 ** Recent files and ~recentf~
-We'll enable the ~recentf~ minor mode so we can navigate to recently opened files easily
 #+begin_src elisp
 (recentf-mode 1)
 (setq recentf-max-menu-items 10
@@ -44,14 +43,12 @@ We'll enable the ~recentf~ minor mode so we can navigate to recently opened file
 #+end_src
 *** TODO Configure ~recentf-mode~ to allow =evil-mode= keys
 ** Backup files
-Move backup files to be sa
 #+begin_src elisp
 (setq backup-directory-alist `(("~/.saves"))
       backup-by-copying t)
 
 (setq auto-save-file-name-transforms `((".*" "~/.saves/" t)))
 #+end_src
-ved at =~/.saves/=
 *** TODO This doesn't work
 ** Startup messages
 Disable the startup and scratch-buffer messages
@@ -60,21 +57,14 @@ Disable the startup and scratch-buffer messages
       initial-scratch-message "")
 #+end_src
 ** Basic interface & appearance
-We'll only configure very basic interface and appearance settings now, saving themes, fonts, etc. for later. We'll start with adding an =hl-line= to mark the line the cursor is on
 #+begin_src elisp
 (global-hl-line-mode)
-#+end_src
-Now we'll disable the scroll bar, tool bar, tool tip, and menu bar -- after which we enable the fringe
-#+begin_src elisp
 (scroll-bar-mode -1)
 (tool-bar-mode -1)
 (tooltip-mode -1)
 (menu-bar-mode -1)
 (set-fringe-mode 0)
 (setq scroll-conservatively most-positive-fixnum)
-#+end_src
-Line numbering only for programming-derived modes
-#+begin_src elisp
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
 #+end_src
 ** Fonts (re-sort later)
@@ -122,12 +112,17 @@ Line numbering only for programming-derived modes
      (toml "https://github.com/tree-sitter/tree-sitter-toml")
      (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
      (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+     (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
      (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 #+end_src
 ** Installation
 #+begin_src elisp
 ;; (mapc #'treesit-install-language-grammar
 ;;       (mapcar #'car treesit-language-source-alist))
+#+end_src
+** Major mode redirection
+#+begin_src elisp
+(add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
 #+end_src
 ** ~evil-textobj-tree-sitter~
 #+begin_src elisp
@@ -206,7 +201,13 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
   :bind (:map global-prefix-map
 	      ("t" . 'neotree-toggle))
   :config
-  (setq neo-theme (if (display-graphic-p) 'nerd 'arrow)))
+  (setq neo-window-fixed-size nil
+	neo-window-width 55)
+  (setq neo-theme (if (display-graphic-p) 'nerd-icons 'nerd-icons)))
+#+end_src
+** ~pdf-tools~
+#+begin_src elisp
+(use-package pdf-tools)
 #+end_src
 ** ~vmd~
 #+begin_src elisp
@@ -235,24 +236,24 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 #+begin_src elisp
 (use-package evil
   :init
-  (setq evil-want-keybinding nil)
+  (setq evil-want-keybinding t)
   (setq evil-undo-system 'undo-fu)
   :config
   (evil-mode 1))
 #+end_src
-*** =evil-collection=
+** =evil-collection=
 #+begin_src elisp
 (use-package evil-collection
   :after evil
   :config
   (evil-collection-init))
 #+end_src
-*** =evil-org=
+** =evil-org=
 #+begin_src elisp
 (use-package evil-org
   :ensure t
   :after org
-  :hook (org-mode . (lambda () evil-org-mode))
+  :hook (org-mode . evil-org-mode)
   :config
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
@@ -267,16 +268,25 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 	 ("C-j" . ivy-next-line)
 	 ("C-k" . ivy-previous-line))
   :config
-  (ivy-mode 1))
+  (setq ivy-use-selectable-prompt t))
+
+(ivy-mode 1)
 #+end_src
-*** ~ivy-rich~
+** ~ivy-rich~
 #+begin_src elisp
 (use-package ivy-rich
-  :after ivy
-  :init
-  (ivy-rich-mode 1))
+  :after ivy)
+
+(require 'ivy-rich)
+(ivy-rich-mode 1)
 #+end_src
-*** ~ivy-prescient~
+** ~counsel~
+#+begin_src elisp
+(use-package counsel
+  :config
+  (counsel-mode 1))
+#+end_src
+** ~ivy-prescient~
 #+begin_src elisp
 (use-package ivy-prescient
   :after counsel
@@ -284,12 +294,6 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
   (ivy-prescient-enable-filtering nil)
   :config
   (ivy-prescient-mode 1))
-#+end_src
-** ~counsel~
-#+begin_src elisp
-(use-package counsel
-  :config
-  (counsel-mode 1))
 #+end_src
 ** ~company~
 #+begin_src elisp
@@ -334,7 +338,44 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
   (add-hook 'elfeed-new-entry-hook
 	    (elfeed-make-tagger :before "1 month ago" :remove 'unread)))
 #+end_src
+*** Feeds
+**** Ludic
+:PROPERTIES:
+:URL: https://ludic.mataroa.blog/rss/
+:Categories: blog programming
+:END:
+**** RACER Indycar
+:PROPERTIES:
+:URL: https://racer.com/indycar/feed/
+:Categories: racing
+:END:
+*** Handlers
+Ughhhhhhh quoting the categories wont work
+#+begin_src elisp
+(defun my-org-elfeed-compile-category ()
+  (interactive)
+  (progn
+    (setq elfeed-feeds ())
+    (org-map-entries (lambda ()
+			(let*
+			    ((categories nil)
+			    (url nil))
+			(when-let
+			    ((url (org-entry-get (point) "URL"))
+				(categories (org-entry-get (point) "Categories")))
+			  (add-to-list 'elfeed-feeds (append (list url) (split-string categories " "))))))
+		    nil 'tree)))
+#+end_src
 ** ~helpful~
+** =magit=
+#+begin_src elisp
+(use-package magit)
+#+end_src
+** icons
+   #+begin_src elisp
+   (use-package nerd-icons-completion)
+   (use-package nerd-icons-ivy-rich)
+   #+end_src
 ** Message completion
 #+begin_src elisp
 (message "Config-status: Completed packages")
@@ -344,10 +385,10 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 (use-package lsp-mode
   :init
   (setq lsp-keymap-prefix "C-c l")
-  ;;(setq lsp-signature-render-documentation nil)
+  (yas-global-mode)
   :hook (
-	 ;;; (XXX-mode. lsp)
 	 (python-mode . lsp)
+	 (python-ts-mode . lsp)
 	 ;; (sh-mode . lsp) ; Requires shellcheck, shfmt ;; Something wrong, freezes client
 	 (rust-mode . lsp)
 	 (c-mode . lsp)
@@ -356,14 +397,12 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 	 (lsp-mode . lsp-ui-mode))
   :commands lsp
   :config
-  ;;(setq lsp-clangd-
-  ;;(setq lsp-clients-clangd-args "-std=c++20")
+  (setq lsp-prefer-flymake t)
   (setq lsp-pylsp-plugins-jedi-completion-enabled t)
   (setq lsp-pylsp-plugins-jedi-completion-fuzzy t)
-  (setq lsp-pylsp-plugins-jedi-environment "/home/schelcc/src/emacs-py-env")
   (setq lsp-eldoc-render-all nil)
   (setq lsp-inlay-hint-enable nil)
-  (setq lsp-eldoc-enable-hover t)
+  ;; (setq lsp-eldoc-enable-hover t)
   (setq lsp-signature-doc-lines 5)
   (setq lsp-signature-render-documentation nil)
   (setq lsp-signature-auto-activate nil))
@@ -374,9 +413,9 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
   :ensure t
   :commands lsp-ui-mode
   :config
-  (lsp-ui-peek-enable t)
-  (setq lsp-ui-doc-enable t)
-  (setq lsp-ui-doc-show-with-cursor t)
+  (lsp-ui-peek-enable nil)
+  (setq lsp-ui-doc-enable nil)
+  (setq lsp-ui-doc-show-with-cursor nil)
   (setq lsp-ui-doc-side 'left)
   (setq lsp-ui-doc-delay 1)
   (setq lsp-ui-doc-position 'at-point))
@@ -417,6 +456,22 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 (add-hook 'org-mode-hook 'org-indent-mode)
 (add-hook 'org-mode-hook 'visual-line-mode)
 #+end_src
+*** Tags
+#+begin_src elisp
+(setq org-tag-alist
+      '((:startgroup . nil) ;; Subject
+	("@mcity" . ?m)
+	("@class" . ?c)
+	("@avc" . ?a)
+	("@waves" .?w)
+	("@personal" . ?p)
+	(:endgroup . nil)
+	(:startgroup . nil) ;; Issue type
+	("issue_outstanding" . ?i)
+	("issue_fixed" . ?S)
+	(:endgroup . nil)
+	("emacs_infra" . ?I)))
+#+end_src
 ** Roam
 *** ~use-package~ statement
 #+begin_src elisp
@@ -433,7 +488,7 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 		(propertize "${tags:30}" 'face 'org-tag)
 		(propertize "${category:20}" 'face 'org-category)))
   (setq org-roam-completion-everywhere t)
-  (setq org-roam-directory (file-truename "~/org/roam")))
+  (setq org-roam-directory (file-truename "~/org/roam/")))
 #+end_src
 *** Capture
 #+begin_src elisp
@@ -443,7 +498,7 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
       '(
         ("d" "default node" plain "%?"
          :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                          "#+title: ${title}\n#+filetags: ${filetags}")
+                            "#+title: ${title}\n#+filetags: %^g")
          :unnarrowed t)
         ("l" "lecture notes" plain
         "* Lecture Notes\n- %?"
@@ -454,6 +509,9 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
          "* TODO %?"
          :target (node "todos")
          :kill-buffer t)
+	("M" "meeting" entry
+	 "* Meeting %^{title||WAVES|AVC} %T %^G\n** Notes\n- %?\n** Action items\n*** "
+	 :target (node "meeting notes"))
         ))
 
 #+end_src
@@ -483,6 +541,13 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 	       :map minibuffer-mode-map
 	       ("C-c n i" . org-roam-ql-insert-node-title))))
 #+end_src
+**** ~org-download~
+#+begin_src elisp
+(use-package org-download
+  :bind (:map org-download-map
+	      ("c" . 'org-download-clipboard))
+  :hook (org-mode . org-download-enable))
+#+end_src
 *** Custom helper methods
 **** Tag retrieval
 #+begin_src elisp
@@ -492,6 +557,126 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 
 (defun my-org-get-tags-list (point)
   (split-string (or (org-entry-get (point) "TAGS") "nil") ":" t))
+#+end_src
+**** Auto-TODO marking
+***** Check if buffer has TODO entry
+#+begin_src elisp
+(defun my-org-has-todo ()
+  "Return `t` if buffer has a TODO, `nil` otherwise"
+  (interactive)
+  (org-element-map
+      (org-element-parse-buffer 'headline)
+      'headline
+    (lambda (h)
+      (eq (org-element-property :todo-type h)
+	  'todo))
+    nil 'first-match))
+#+end_src
+***** Add tag if it does
+#+begin_src elisp
+(defun my-org-mark-if-has-todo ()
+  "Add tag \"@todo\" to node's filetags if a TODO is present"
+  (interactive)
+  (if (and (string-equal major-mode "org-mode") (org-roam-file-p))
+      (let (tags (org-roam-node-tags (org-roam-node-at-point)))
+	(if (and (my-org-has-todo)
+		 (not (member "@todo" (org-roam-node-tags (org-roam-node-at-point)))))
+	    (org-roam-set-keyword
+	     "filetags"
+	     (concat
+	      ":"
+	      (string-join (org-roam-node-tags (org-roam-node-at-point)) ":")
+	      (if (org-roam-node-tags (org-roam-node-at-point)) ":")
+	      "@todo:"))))))
+#+end_src
+****** TODO Add capability to remove @todo if TODO is not present
+***** Setup hooks
+****** ~find-file-hook~
+Run when a buffer is loaded from a file
+#+begin_src elisp
+(add-hook 'find-file-hook #'my-org-mark-if-has-todo)
+#+end_src
+****** ~before-save-hook~
+Run before a buffer is saved
+#+begin_src elisp
+(add-hook 'before-save-hook #'my-org-mark-if-has-todo)
+#+end_src
+***** Get all marked
+#+begin_src elisp
+(defun my-org-all-todo-files ()
+  "Use org-roam's DB to query all nodes with @todo marked"
+  (interactive)
+  (seq-uniq
+   (seq-map
+    #'car
+    (org-roam-db-query
+     [:select [nodes:file]
+	      :from tags
+	      :left-join nodes
+	      :on (= tags:node-id nodes:id)
+	      :where (like tag (quote "%\"@todo\"%"))]))))
+#+end_src
+***** Run whenever agenda is run
+#+begin_src elisp
+(defun my-org-agenda-files-update (&rest _)
+  "Update `org-agenda-files` dynamically based on @todo"
+  (setq org-agenda-files (my-org-all-todo-files)))
+
+(advice-add 'org-agenda :before #'my-org-agenda-files-update)
+(advice-add 'org-todo-list :before #'my-org-agenda-files-update)
+#+end_src
+***** Visit all files to trigger update
+#+begin_src elisp
+(defun my-org-agenda-walk-all-roam-files ()
+  "Open all org-roam files to trigger an update to their @todo mark"
+  (interactive)
+  (dolist (file (org-roam-list-files))
+    (message "Visiting file %s" file)
+    (with-current-buffer (or (find-buffer-visiting file)
+			     (find-file-noselect file))
+      (my-org-mark-if-has-todo)
+      (save-buffer))))
+#+end_src
+**** Quick-todo
+#+begin_src elisp
+(defvar quick-todo-filename-trunc-length 20
+  "Number of characters to truncate the quick-todo filename string at")
+
+(defun quick-todo ()
+  "Prompt infor for a TODO in the minibuffer for a quicker TODO capture"
+  (interactive)
+  (let*
+      ((todo (read-string "Todo: "))
+       (deadline (read-string "Deadline [relative]: "))
+       (slug (org-roam-node-slug (org-roam-node-create :title todo)))
+       (filename
+	(format "%d-%s.org"
+		(time-convert (current-time) 'integer)
+		slug))
+       (org-id-overriding-file-name filename)
+       id)
+    (with-temp-buffer
+      (insert ":PROPERTIES:\n:ID:        \n:END:\n#+title: "
+	      (substring todo 0 (min quick-todo-filename-trunc-length (length todo)))
+	      "\n:END:\n* TODO " todo)
+      (goto-char 25)
+      (setq id (org-id-get-create))
+      (write-file filename)
+      (org-roam-db-update-file filename))
+    (org-roam-db-sync)))
+			 
+#+end_src
+**** Delete node
+#+begin_src elisp
+(defun org-roam-delete-current-node ()
+  "Delete node currently open w/ confirmation"
+  (interactive)
+  (if (string-equal (read-string "Delete current node? [yes/no]: ") "yes")
+      (progn
+	(delete-file (org-roam-node-file (org-roam-node-at-point)))
+	(kill-buffer (current-buffer))
+	(org-roam-db-sync))
+    (message "Didn't get 'yes', not deleting.")))
 #+end_src
 *** Automatic categorization
 **** Tag - category associations
@@ -526,15 +711,38 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 #+begin_src elisp
 (use-package org-super-agenda
   :hook (org-agenda-mode . org-super-agenda-mode)
+  :bind (:map org-super-agenda-header-map
+	     ("j" . 'org-agenda-next-line)
+	     ("k" . 'org-agenda-previous-line))
   :config
   (setq org-super-agenda-groups
 	'((:log t)
-	    (:name "Today"
-		:scheduled today))))
+	  (:name "Completed today"
+		 :regexp "State \"DONE\"")
+	  (:name "Schedule"
+		 :time-grid t
+		 :order 1)
+	  (:name "Today"
+		 :and (
+		       :todo t
+		       :deadline today)
+		 :order 2)
+	  (:name "Overdue"
+		 :deadline past
+		 :order 97)
+	  ;; (:name "Dateless"
+	  ;; 	 :date nil
+	  ;; 	 :order 99)
+	  (:name "AVC"
+		 :and (:tag ("@avc" "avc" "AVC") :todo t)
+		 :order 12)
+	  (:name "WAVES"
+		 :tag ("@waves" "WAVES" "waves" "research")
+		 :order 11))))
 #+end_src
 *** Files
 #+begin_src elisp
-(setq org-agenda-files '("~/org/roam" "~/org/roam/daily"))
+(setq org-agenda-files (my-org-all-todo-files))
 #+end_src
 *** Prefix format
 #+begin_src elisp
@@ -556,10 +764,12 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 
 (setq org-agenda-window-setup "only-window")
 
-(setq org-agenda-span 'week)
+(setq org-agenda-span 'day)
 
+;; (setq org-agenda-skip-deadline-if-done nil)
+;; (setq org-agenda-skip-function-global '(org-agenda-skip-entry-if 'todo 'done))
 (setq org-agenda-skip-deadline-if-done nil)
-(setq org-agenda-skip-function-global '(org-agenda-skip-entry-if 'todo 'done))
+(setq org-agenda-skip-function-global nil)
 
 #+end_src
 *** Deadline warning
@@ -577,7 +787,14 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
       "MISC"
       category)))
 #+end_src
-
+*** Custom views
+#+begin_src elisp
+(setq org-agenda-custom-commands
+      '(("ces" "Custom: Agenda and Emacs IDEA items"
+	 ((org-ql-block '(and (todo) (tags "@avc"))
+			((org-ql-block-header "SOMEDAY :Emacs: High-priority")))
+	  ))))
+#+end_src
 ** Babel
 *** General
 #+begin_src elisp
@@ -663,9 +880,6 @@ Hide leading stars for headings, use UTF-8 symbols
 #+end_src
 **** ~org-special-blocks-extra~
 #+begin_src elisp
-(use-package org-special-block-extras
-  :ensure t
-  :hook (org-mode . org-special-block-extras-mode))
 #+end_src
 **** ~olivetti~
 #+begin_src elisp
@@ -674,10 +888,9 @@ Hide leading stars for headings, use UTF-8 symbols
   (olivetti-set-width 0.75))
 
 (use-package olivetti
+  :config
   :hook ((org-mode . olivetti-mode)
-	 (org-mode . my-fix-fucking-olivetti)))
-
-
+	 (olivetti-mode . my-fix-fucking-olivetti)))
 #+end_src
 *** Faces (re-sort later)
 #+begin_src elisp
@@ -690,6 +903,7 @@ Hide leading stars for headings, use UTF-8 symbols
     (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-drawer nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-hide nil :inherit 'fixed-pitch))
     ;; (set-face-attribute 'org-block-begin-line nil :inherit '(org-hide))
     ;; (set-face-attribute 'org-block-begin-line nil :inherit '(org-hide default))
@@ -780,8 +994,8 @@ line are justified."
 #+begin_src elisp
 (setq org-startup-with-inline-images t
       org-startup-with-latex-preview t
-      org-pretty-entities t
-      org-pretty-entities-include-sub-superscripts t
+      org-pretty-entities nil
+      org-pretty-entities-include-sub-superscripts nil
       org-highlight-latex-and-related '(native))
 #+end_src
 
