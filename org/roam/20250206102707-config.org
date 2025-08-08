@@ -81,7 +81,8 @@ Disable the startup and scratch-buffer messages
 #+end_src
 ** Theme (re-sort later)
 #+begin_src elisp
-(setq custom-theme-load-path '("~/.config/emacs/emacs-theme-gruvbox"))
+(setq custom-theme-load-path '("/home/schelcc/.config/emacs/emacs-theme-gruvbox"))
+(add-to-list 'load-path (expand-file-name "~/.config/emacs/emacs-theme-gruvbox/"))
 (load-theme 'gruvbox-dark-medium t)
 #+end_src
 ** Reload ~config.el~ from anywhere
@@ -123,18 +124,6 @@ Disable the startup and scratch-buffer messages
 ** Major mode redirection
 #+begin_src elisp
 (add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
-#+end_src
-** ~evil-textobj-tree-sitter~
-#+begin_src elisp
-(use-package evil-textobj-tree-sitter
-  :ensure t)
-;; bind `function.outer`(entire function block) to `f` for use in things like `vaf`, `yaf`
-(define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
-;; bind `function.inner`(function block without name and args) to `f` for use in things like `vif`, `yif`
-(define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
-
-;; You can also bind multiple items and we will match the first one we can find
-(define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
 #+end_src
 ** Message completion
 #+begin_src elisp
@@ -203,7 +192,10 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
   :config
   (setq neo-window-fixed-size nil
 	neo-window-width 55)
-  (setq neo-theme (if (display-graphic-p) 'nerd-icons 'nerd-icons)))
+  (setq neo-theme (if (display-graphic-p) 'nerd-icons 'nerd-icons))
+  (defun work-neotree-setup ()
+    (interactive)
+    (neotree-dir "~/mcity/octane-ws/")))
 #+end_src
 ** ~pdf-tools~
 #+begin_src elisp
@@ -212,10 +204,14 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 ** ~vmd~
 #+begin_src elisp
 (use-package vmd-mode
-  :hook (markdown-mode . vmd-mode)
+  ;; :hook (markdown-mode . vmd-mode)
   :config
   (setq vmd-binary-path "~/.config/nvm/versions/node/v20.14.0/bin/vmd"))
 #+end_src
+
+#+RESULTS:
+: t
+
 ** ~mood-line~
 #+begin_src elisp
 (use-package mood-line
@@ -235,14 +231,24 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 ** ~evil~
 #+begin_src elisp
 (use-package evil
+  :ensure t
   :init
-  (setq evil-want-keybinding t)
-  (setq evil-undo-system 'undo-fu)
+  (setq evil-want-integration t)
+  (setq evil-want-keybinding nil)
+  :bind (:map evil-motion-state-map
+	      ("C-w [" . 'previous-buffer)
+	      ("C-w ]" . 'next-buffer))
   :config
   (evil-mode 1))
+
+;; (with-eval-after-load 'evil-maps
+;;   (define-key evil-motion-state-map (kbd "C-w [") 'previous-buffer)
+;;   (define-key evil-motion-state-map (kbd "C-w ]") 'next-buffer))
+
 #+end_src
 ** =evil-collection=
 #+begin_src elisp
+(setq evil-want-keybinding nil)
 (use-package evil-collection
   :after evil
   :config
@@ -258,15 +264,38 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
 #+end_src
+** ~evil-textobj-tree-sitter~
+#+begin_src elisp
+(use-package evil-textobj-tree-sitter
+  :ensure t)
+
+;; bind `function.outer`(entire function block) to `f` for use in things like `vaf`, `yaf`
+(define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+;; bind `function.inner`(function block without name and args) to `f` for use in things like `vif`, `yif`
+(define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+
+;; You can also bind multiple items and we will match the first one we can find
+(define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
+#+end_src
+** ~evil-visual-mark-mode~
+#+begin_src elisp
+(use-package evil-visual-mark-mode
+  :config
+  (evil-visual-mark-mode))
+#+end_src
 ** ~ivy~
 #+begin_src elisp
 (use-package ivy
   :diminish
-  :bind (("C-s" . swiper)
+  :bind (("C-s" . 'ivy-switch-buffer)
 	 :map ivy-minibuffer-map
 	 ("TAB" . ivy-alt-done)
 	 ("C-j" . ivy-next-line)
-	 ("C-k" . ivy-previous-line))
+	 ("C-k" . ivy-previous-line)
+	 :map ivy-switch-buffer-map
+	 ("C-j" . ivy-next-line)
+	 ("C-k" . ivy-previous-line)
+	 )
   :config
   (setq ivy-use-selectable-prompt t))
 
@@ -275,7 +304,9 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 ** ~ivy-rich~
 #+begin_src elisp
 (use-package ivy-rich
-  :after ivy)
+  :after ivy
+  :config
+  (ivy-set-display-transformer 'ivy-switch-buffer 'ivy-rich--ivy-switch-buffer-transformer))
 
 (require 'ivy-rich)
 (ivy-rich-mode 1)
@@ -297,18 +328,29 @@ This will include more later, but for now we'll just bind the ~global-prefix-map
 #+end_src
 ** ~company~
 #+begin_src elisp
+(defun company-no-spelling-backends ()
+  (interactive)
+  (setq-local company-backends '((company-capf company-files))))
+
 (use-package company
-  :bind (:map global-prefix-map
-	      ("l" . 'company-complete))
+  :bind ((:map global-prefix-map ("l" . 'company-complete))
+	 (:map company-active-map (("<tab>" . 'company-complete-selection)
+				   ("<return>" . 'company-abort))))
+	       
+  :hook
+  (emacs-lisp-mode . company-no-spelling-backends)
   :config
-  (setq company-idle-delay 0)
-  (setq company-tooltip-align-annotations t)
-  (setq company-tooltip-limit 8)
-  (setq company-dabbrev-minimum-length 4)
-  (setq company-dabbrev-other-buffers t)
+  (setq company-idle-delay 0
+	company-tooltip-align-annotations t
+	company-tooltip-limit 8
+	company-dabbrev-minimum-length 4
+	company-dabbrev-other-buffers t
+	company-transformers '(company-sort-by-occurrence
+			       company-sort-by-backend-importance)
+	company-backends '((company-capf
+			    comapny-dabbrev
+			    company-ispell)))
   
-  (setq company-backends '((company-capf company-dabbrev company-ispell)))
-  (setq company-transformers '(company-sort-by-occurrence company-sort-by-backend-importance))
   (global-company-mode))
 #+end_src
 ** ~which-key~
@@ -369,7 +411,7 @@ Ughhhhhhh quoting the categories wont work
 ** ~helpful~
 ** =magit=
 #+begin_src elisp
-(use-package magit)
+;; (use-package magit)
 #+end_src
 ** icons
    #+begin_src elisp
@@ -393,16 +435,46 @@ Ughhhhhhh quoting the categories wont work
 	 (rust-mode . lsp)
 	 (c-mode . lsp)
 	 (c++-mode . lsp)
+	 (xml-mode . lsp)
 	 (lsp-mode . lsp-enable-which-key-integration)
 	 (lsp-mode . lsp-ui-mode))
   :commands lsp
   :config
+  ;; pylsp plugins
+  ;; (setq lsp-pylsp-plugins-black-enabled nil
+  ;; 	lsp-pylsp-plugins-flake8-enabled nil
+  ;; 	lsp-pylsp-plugins-isort-enabled nil
+  ;; 	lsp-pylsp-plugins-jedi-completion-enabled nil
+  ;; 	lsp-pylsp-plugins-jedi-definition-enabled nil
+  ;; 	lsp-pylsp-plugins-jedi-hover-enabled nil
+  ;; 	lsp-pylsp-plugins-jedi-references-enabled nil
+  ;; 	lsp-pylsp-plugins-jedi-signature-help-enabled nil
+  ;; 	lsp-pylsp-plugins-jedi-symbols-enabled nil
+  ;; 	lsp-pylsp-plugins-mccabe-enabled nil
+  ;; 	lsp-pylsp-plugins-mypy-enabled nil
+  ;; 	lsp-pylsp-plugins-preload-enabled nil
+  ;; 	lsp-pylsp-plugins-pycodestyle-enabled nil
+  ;; 	lsp-pylsp-plugins-pydocstile-enabled nil
+  ;; 	lsp-pylsp-plugins-pyflakes-enabled nil
+  ;; 	lsp-pylsp-plugins-pylint-enabled nil
+  ;; 	lsp-pylsp-plugins-rope-autoimport-code-actions-enabled nil
+  ;; 	lsp-pylsp-plugins-rope-autoimport-completions-enabled nil
+  ;; 	lsp-pylsp-plugins-rope-autoimport-enabled nil
+  ;; 	lsp-pylsp-plugins-rope-completion-enabled nil
+  ;; 	lsp-pylsp-plugins-ruff-enabled nil
+  ;; 	lsp-pylsp-plugins-yapf-enabled nil)
+  (setq lsp-xml-completion-auto-close-tags t)
+  (lsp-register-custom-settings '(
+				  ("editor.autoClosingTags" nil t)))
+	
   (setq lsp-prefer-flymake t)
   (setq lsp-pylsp-plugins-jedi-completion-enabled t)
   (setq lsp-pylsp-plugins-jedi-completion-fuzzy t)
+  ;; (lsp-register-custom-settings '(
+  ;;  ("lsp.pylsp.plugins.ruff.extendIgnore" ["E302"] t)))
+  ;;(setq lsp-pylsp-plugins-ruff-ignore ['("D107") '("E302")])
   (setq lsp-eldoc-render-all nil)
   (setq lsp-inlay-hint-enable nil)
-  ;; (setq lsp-eldoc-enable-hover t)
   (setq lsp-signature-doc-lines 5)
   (setq lsp-signature-render-documentation nil)
   (setq lsp-signature-auto-activate nil))
@@ -455,6 +527,7 @@ Ughhhhhhh quoting the categories wont work
 (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 (add-hook 'org-mode-hook 'org-indent-mode)
 (add-hook 'org-mode-hook 'visual-line-mode)
+(add-hook 'org-mode-hook 'auto-revert-mode)
 #+end_src
 *** Tags
 #+begin_src elisp
@@ -477,11 +550,11 @@ Ughhhhhhh quoting the categories wont work
 #+begin_src elisp
 (use-package org-roam
   :init
-  (org-roam-db-autosync-mode)
   :bind (:map org-io-map
 	      ("c" . 'org-roam-capture)
 	      ("f" . 'org-roam-node-find))
   :config
+  (org-roam-db-autosync-mode)
   (require 'org-roam-export)
   (setq org-roam-node-display-template
 	(concat "${title:*} "
@@ -492,8 +565,6 @@ Ughhhhhhh quoting the categories wont work
 #+end_src
 *** Capture
 #+begin_src elisp
-(add-hook 'org-capture-after-finalize-hook 'my-org-exit-frame-if-fleeting)
-
 (setq org-roam-capture-templates
       '(
         ("d" "default node" plain "%?"
@@ -553,10 +624,14 @@ Ughhhhhhh quoting the categories wont work
 #+begin_src elisp
 (defun my-org-get-tags-at-point-safe ()
   (interactive)
-  (or (split-string (or (org-entry-get (point) "TAGS") "nil") ":" t) "nil"))
+  (progn
+    (message "my-org-get-tags-at-point-safe")
+    (or (split-string (or (org-entry-get (point) "TAGS") "nil") ":" t) "nil")))
 
 (defun my-org-get-tags-list (point)
-  (split-string (or (org-entry-get (point) "TAGS") "nil") ":" t))
+  (progn
+    (message "my-org-get-tags-list")
+    (split-string (or (org-entry-get (point) "TAGS") "nil") ":" t)))
 #+end_src
 **** Auto-TODO marking
 ***** Check if buffer has TODO entry
@@ -572,24 +647,35 @@ Ughhhhhhh quoting the categories wont work
 	  'todo))
     nil 'first-match))
 #+end_src
-***** Add tag if it does
+***** Add tag if it does, remove if not
 #+begin_src elisp
 (defun my-org-mark-if-has-todo ()
   "Add tag \"@todo\" to node's filetags if a TODO is present"
   (interactive)
-  (if (and (string-equal major-mode "org-mode") (org-roam-file-p))
-      (let (tags (org-roam-node-tags (org-roam-node-at-point)))
+  (if (string-equal major-mode "org-mode")
+      (when (org-roam-node-at-point)
 	(if (and (my-org-has-todo)
 		 (not (member "@todo" (org-roam-node-tags (org-roam-node-at-point)))))
-	    (org-roam-set-keyword
-	     "filetags"
-	     (concat
-	      ":"
-	      (string-join (org-roam-node-tags (org-roam-node-at-point)) ":")
-	      (if (org-roam-node-tags (org-roam-node-at-point)) ":")
-	      "@todo:"))))))
+	    (progn
+	      (org-roam-set-keyword
+	       "filetags"
+	       (concat ":"
+		       (string-join (org-roam-node-tags (org-roam-node-at-point)) ":")
+		       (if (org-roam-node-tags (org-roam-node-at-point)) ":")
+		       "@todo:"))
+	      (message "Todo marking: Marked todo for %s"
+		       (org-roam-node-title (org-roam-node-at-point))))
+
+	  (if (not (my-org-has-todo))
+	      (progn
+		(org-roam-set-keyword
+		 "filetags"
+		 (concat ":"
+			 (string-join (delete "@todo" (org-roam-node-tags (org-roam-node-at-point))) ":")
+			 ":"))
+		(message "Todo marking: Removed todo for %s"
+			 (org-roam-node-title (org-roam-node-at-point)))))))))
 #+end_src
-****** TODO Add capability to remove @todo if TODO is not present
 ***** Setup hooks
 ****** ~find-file-hook~
 Run when a buffer is loaded from a file
@@ -635,7 +721,8 @@ Run before a buffer is saved
     (with-current-buffer (or (find-buffer-visiting file)
 			     (find-file-noselect file))
       (my-org-mark-if-has-todo)
-      (save-buffer))))
+      (save-buffer)
+      (kill-buffer))))
 #+end_src
 **** Quick-todo
 #+begin_src elisp
@@ -650,7 +737,7 @@ Run before a buffer is saved
        (deadline (read-string "Deadline [relative]: "))
        (slug (org-roam-node-slug (org-roam-node-create :title todo)))
        (filename
-	(format "%d-%s.org"
+	(format "~/org/roam/%d-%s__QT__.org"
 		(time-convert (current-time) 'integer)
 		slug))
        (org-id-overriding-file-name filename)
@@ -658,10 +745,11 @@ Run before a buffer is saved
     (with-temp-buffer
       (insert ":PROPERTIES:\n:ID:        \n:END:\n#+title: "
 	      (substring todo 0 (min quick-todo-filename-trunc-length (length todo)))
-	      "\n:END:\n* TODO " todo)
+	      "\n* TODO " todo)
       (goto-char 25)
       (setq id (org-id-get-create))
       (write-file filename)
+      (org-roam-tag-add '("quicktodo"))
       (org-roam-db-update-file filename))
     (org-roam-db-sync)))
 			 
@@ -730,6 +818,9 @@ Run before a buffer is saved
 	  (:name "Overdue"
 		 :deadline past
 		 :order 97)
+	  (:name "Quick todo"
+		 :tag "quicktodo"
+		 :order 99)
 	  ;; (:name "Dateless"
 	  ;; 	 :date nil
 	  ;; 	 :order 99)
@@ -790,8 +881,8 @@ Run before a buffer is saved
 *** Custom views
 #+begin_src elisp
 (setq org-agenda-custom-commands
-      '(("ces" "Custom: Agenda and Emacs IDEA items"
-	 ((org-ql-block '(and (todo) (tags "@avc"))
+      '(("cm" "Custom: Mcity"
+	 ((org-ql-block '(and (todo) (tags "@mcity"))
 			((org-ql-block-header "SOMEDAY :Emacs: High-priority")))
 	  ))))
 #+end_src
@@ -814,6 +905,21 @@ Run before a buffer is saved
  '((mermaid . t)
    (python . t)
    (emacs-lisp . t)))
+#+end_src
+*** Custom helpers
+**** Automatic Mermaid setup
+#+begin_src elisp
+(defun mermaid-insert-source-block ()
+  "Insert base org SOURCE block for mermaid along with image embed"
+  (interactive)
+  (let* ((fname (read-string "File name: "))
+	 (img-width (read-string "Image width: " "1500px")))
+    (save-excursion
+      (insert "#+begin_src mermaid :file " fname " :width " img-width " :results silent\n"
+	      "#+end_src\n\n"
+	      "[[file:" fname "]]"))))
+
+(add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
 #+end_src
 ** General appearance
 *** Lists
