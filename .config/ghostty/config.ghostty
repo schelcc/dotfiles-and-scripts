@@ -1,0 +1,9 @@
+# https://ghostty.org/docs/config/reference
+font-size = 7.5
+theme = Gruvbox Dark
+background-opacity = 0.9
+background-blur = true
+window-show-tab-bar = never
+window-decoration = none
+cursor-style = block
+shell-integration-features = no-cursor

@@ -35,13 +35,13 @@ bindsym XF86Launch8 exec decrease_brightness
 bindsym $mod+Shift+s exec "export $DISPLAY=:0 && screenshot.sh"
 
 # Toggle light and dark mode
-bindsym $mod+Shift+t exec "light_dark.py"
+bindsym $mod+Shift+t exec "toggle_ghostty_theme.sh"
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec $TERMINAL
+bindsym $mod+Return exec /usr/bin/ghostty
 
 # show and hide notepads
 bindsym $mod+p exec "xpad -t"
@@ -192,7 +192,8 @@ bindsym $mod+Shift+minus move scratchpad
 bindsym $mod+minus scratchpad show
 
 # Scratchpad specifics
-bindsym $mod+m [instance="scratch_term"] scratchpad show
+bindsym $mod+Shift+m exec ghostty --class="com.marking.scratch_term"
+bindsym $mod+m [class="com.marking.scratch_term"] scratchpad show
 bindsym $mod+a [title="^org_agenda_scratchpad"] scratchpad show
 bindsym $mod+c [class="^Gnome-calculator"] scratchpad show
 bindsym $mod+Shift+a [class="^Pavucontrol"] scratchpad show
@@ -245,10 +246,10 @@ for_window [class="Spotify"] move to workspace $ws10
 # Default gnome-calculator to floating and throw on scratchpad
 for_window [class="^Gnome-calculator"] floating toggle move to scratchpad
 
-for_window [title="scratch_term"] floating toggle
+for_window [class="com.marking.scratch_term"] floating toggle
 #for_window [class="^xpad"] floating toggle
-for_window [title="scratch_term"] resize set 800 500
-for_window [title="scratch_term"] move to scratchpad
+for_window [class="com.marking.scratch_term"] resize set 800 500
+for_window [class="com.marking.scratch_term"] move to scratchpad
 for_window [title="org_agenda_scratchpad"] move to scratchpad
 for_window [title="pavucontrol"] move to scratchpad
 for_window [title="^Zoom.*"] move to workspace $ws7
