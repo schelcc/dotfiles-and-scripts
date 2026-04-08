@@ -41,7 +41,9 @@ We'll wanna grab the ~$PATH~ at startup
 (setq recentf-max-menu-items 10
       recentf-max-saved-items 10)
 #+end_src
-*** TODO Configure ~recentf-mode~ to allow =evil-mode= keys
+*** NOT DOING Configure ~recentf-mode~ to allow =evil-mode= keys
+    CLOSED: [2026-01-05 Mon 11:42]
+    - State "NOT DOING"  from "TODO"       [2026-01-05 Mon 11:42]
 ** Backup files
 #+begin_src elisp
 (setq backup-directory-alist `(("~/.saves"))
@@ -73,8 +75,8 @@ Disable the startup and scratch-buffer messages
   (setq global-variable-pitch-font "Liberation Sans")
 
   (when (member global-fixed-pitch-font (font-family-list))
-    (set-face-attribute 'default nil :font global-fixed-pitch-font :width 'normal :height 100)
-    (set-face-attribute 'fixed-pitch nil :family "Droid Sans Mono"))
+    (set-face-attribute 'default nil :font global-fixed-pitch-font :width 'normal :height 110)
+    (set-face-attribute 'fixed-pitch nil :family "Inconsolata Nerd Font Mono"))
 
   (when (member global-variable-pitch-font (font-family-list))
     (set-face-attribute 'variable-pitch nil :family global-variable-pitch-font :height 1.0))
@@ -164,6 +166,13 @@ This keymap ~org-io-map~ is for various org related tasks (capture, agenda, etc.
   "p" 'org-latex-preview
   "d" `("Org-download options" . ,org-download-map))
 #+end_src
+*** Quick things
+For quick-access commands, like ~M-x quick-todo~.
+#+begin_src elisp
+(defvar-keymap quick-menu-map
+  :doc "Keybind map for quick-tasks"
+  "t" #'quick-todo)
+#+end_src
 *** Global
 This keymap ~global-prefix-map~ is the *base* map that all prior keymaps will branch off from. As such, everything here should be treated as either a "root" for some other functionality, or an oft-used shortcut that doesn't flow into anything else. We'll populate it with the previous keymaps, leaving a few other bindings for later with their packages
 #+begin_src elisp
@@ -172,6 +181,7 @@ This keymap ~global-prefix-map~ is the *base* map that all prior keymaps will br
   "o" `("Org IO Keybinds" . ,org-io-map)
   "f" `("File IO Keybinds" . ,file-io-map)
   "b" `("Buffer & Options" . ,buffer-menu-map)
+  "q" `("Quick-tasks" . ,quick-menu-map)
   "r" 'reload-config)
 #+end_src
 ** Binding the maps (and the keys)
@@ -424,6 +434,12 @@ Ughhhhhhh quoting the categories wont work
 #+end_src
 * LSP 
 #+begin_src elisp
+(defun my-c-mode-hook ()
+  (progn
+    (c-set-offset 'innamespace '0)
+    (c-set-offset 'c '0)
+    (setq c-basic-offset 2)))
+  
 (use-package lsp-mode
   :init
   (setq lsp-keymap-prefix "C-c l")
@@ -437,36 +453,16 @@ Ughhhhhhh quoting the categories wont work
 	 (c++-mode . lsp)
 	 (xml-mode . lsp)
 	 (lsp-mode . lsp-enable-which-key-integration)
-	 (lsp-mode . lsp-ui-mode))
+	 (lsp-mode . lsp-ui-mode)
+	 (lsp-mode . hs-minor-mode)
+	 )
   :commands lsp
   :config
-  ;; pylsp plugins
-  ;; (setq lsp-pylsp-plugins-black-enabled nil
-  ;; 	lsp-pylsp-plugins-flake8-enabled nil
-  ;; 	lsp-pylsp-plugins-isort-enabled nil
-  ;; 	lsp-pylsp-plugins-jedi-completion-enabled nil
-  ;; 	lsp-pylsp-plugins-jedi-definition-enabled nil
-  ;; 	lsp-pylsp-plugins-jedi-hover-enabled nil
-  ;; 	lsp-pylsp-plugins-jedi-references-enabled nil
-  ;; 	lsp-pylsp-plugins-jedi-signature-help-enabled nil
-  ;; 	lsp-pylsp-plugins-jedi-symbols-enabled nil
-  ;; 	lsp-pylsp-plugins-mccabe-enabled nil
-  ;; 	lsp-pylsp-plugins-mypy-enabled nil
-  ;; 	lsp-pylsp-plugins-preload-enabled nil
-  ;; 	lsp-pylsp-plugins-pycodestyle-enabled nil
-  ;; 	lsp-pylsp-plugins-pydocstile-enabled nil
-  ;; 	lsp-pylsp-plugins-pyflakes-enabled nil
-  ;; 	lsp-pylsp-plugins-pylint-enabled nil
-  ;; 	lsp-pylsp-plugins-rope-autoimport-code-actions-enabled nil
-  ;; 	lsp-pylsp-plugins-rope-autoimport-completions-enabled nil
-  ;; 	lsp-pylsp-plugins-rope-autoimport-enabled nil
-  ;; 	lsp-pylsp-plugins-rope-completion-enabled nil
-  ;; 	lsp-pylsp-plugins-ruff-enabled nil
-  ;; 	lsp-pylsp-plugins-yapf-enabled nil)
+  (setq lsp-clangd-version "21.1.0")
   (setq lsp-xml-completion-auto-close-tags t)
   (lsp-register-custom-settings '(
 				  ("editor.autoClosingTags" nil t)))
-	
+  
   (setq lsp-prefer-flymake t)
   (setq lsp-pylsp-plugins-jedi-completion-enabled t)
   (setq lsp-pylsp-plugins-jedi-completion-fuzzy t)
@@ -477,7 +473,13 @@ Ughhhhhhh quoting the categories wont work
   (setq lsp-inlay-hint-enable nil)
   (setq lsp-signature-doc-lines 5)
   (setq lsp-signature-render-documentation nil)
-  (setq lsp-signature-auto-activate nil))
+  (setq lsp-signature-auto-activate nil)
+  (setq lsp-format-buffer-on-save t))
+
+(setq lsp-format-buffer-on-save t)
+
+(add-hook 'c-mode-common-hook 'my-c-mode-hook)
+
 #+end_src
 ** ~lsp-ui~
 #+begin_src elisp
@@ -499,15 +501,16 @@ Ughhhhhhh quoting the categories wont work
 #+end_src
 ** Language specific
 #+begin_src elisp
-  (use-package docker-compose-mode)
-  (use-package dockerfile-mode)
-  (use-package mermaid-mode)
-  (use-package spice-mode)
-  (use-package python-mode)
-  (use-package rust-mode)
-  (use-package flycheck-rust)
-  (use-package json-mode)
-  (use-package flycheck)
+(use-package docker-compose-mode)
+(use-package dockerfile-mode)
+(use-package mermaid-mode)
+(use-package spice-mode)
+(use-package python-mode)
+(use-package rust-mode)
+(use-package flycheck-rust)
+(use-package json-mode)
+(use-package flycheck)
+(use-package haskell-mode)
 #+end_src
 *** Rustic
 #+begin_src elisp
@@ -516,9 +519,38 @@ Ughhhhhhh quoting the categories wont work
     :config
     (setq rustic-format-on-save t))
 #+end_src
+*** LaTeX
+#+begin_src elisp
+(use-package lsp-ltex
+  :ensure t
+  ;; :hook (text-mode . (lambda ()
+  ;;                      (require 'lsp-ltex)
+  ;;                      (lsp)))  ; or lsp-deferred
+  :init
+  (setq lsp-ltex-version "15.2.0"
+	lsp-ltex-completion-enabled t))  ; make sure you have set this, see below)
+#+end_src
+*** WAT (Wasm-text)
+#+begin_src elisp
+(add-to-list 'load-path "/home/schelcc/.config/emacs/wat-mode/")
+(require 'wat-mode)
+#+end_src
+
 ** Message completion
 #+begin_src elisp
 (message "Config-status: Completed LSP")
+#+end_src
+** Indentation corrections
+#+begin_src elisp
+;; (setq c-default-style "k&r"
+;;       c-basic-offset 2)
+
+(custom-set-variables
+ '(c-basic-offset 2)
+ )
+
+(c-set-offset 'innamespace '0)
+(c-set-offset 'c '0)
 #+end_src
 * Org
 ** Base behavior
@@ -539,9 +571,14 @@ Ughhhhhhh quoting the categories wont work
 	("@waves" .?w)
 	("@personal" . ?p)
 	(:endgroup . nil)
+	(:startgroup . nil)
+	("cse489" . ?C)
+	("ece466" . ?e)
+	("cj429" . ?j)
+	(:endgroup . nil)
 	(:startgroup . nil) ;; Issue type
-	("issue_outstanding" . ?i)
-	("issue_fixed" . ?S)
+	;; ("issue_outstanding" . ?i)
+	;; ("issue_fixed" . ?S)
 	(:endgroup . nil)
 	("emacs_infra" . ?I)))
 #+end_src
@@ -588,19 +625,23 @@ Ughhhhhhh quoting the categories wont work
 #+end_src
 *** TODOs
 #+begin_src elisp
-(setq org-log-done 'time)
-(setq org-agenda-skip-deadline-if-done t)
+(add-to-list 'org-modules 'org-habit t)
 
 (setq org-todo-keywords
       '((sequence
-	 "IDEA(i)"
 	 "TODO(t)"
 	 "INACTIVE(I)"
 	 "DOING(d)"
 	 "BLOCKED(b@)"
+	 "IDEA(i)"
 	 "|"
 	 "COMPLETE(c!)"
 	 "NOT DOING(n!)")))
+
+(setq org-log-done 'time
+      org-agenda-skip-deadline-if-done t
+      org-treat-insert-todo-heading-as-state-change t
+      org-log-into-drawer nil)
 #+end_src
 *** Packages
 **** ~org-roam-ql~
@@ -649,38 +690,56 @@ Ughhhhhhh quoting the categories wont work
 #+end_src
 ***** Add tag if it does, remove if not
 #+begin_src elisp
+(defun org-roam-node-tags-unsaved ()
+  "Returns list of filetags associated with the node in the current buffer, regardless of those present in the db"
+  (interactive)
+  (setq all-tags ())
+  (save-excursion
+    (goto-char (string-match "filetags" (buffer-string)))
+    (while (re-search-forward ":[^: ]+" (line-end-position) t)
+      (push (substring-no-properties (match-string 0) 1 nil) all-tags))
+    (reverse all-tags)))
+
+(defun my-org-roam-has-tag (tag)
+  "Checks if current node has tag `tag`. Returns t if so, otherwise nil."
+  (interactive)
+  (if (member tag (org-roam-node-tags-unsaved))
+      't
+    'nil))
+
+(defun my-org-roam-add-tag (tag)
+  "Add tag `tag` to current node. Idempotent operation."
+  (interactive)
+  (org-roam-set-keyword
+   "filetags"
+   (concat ":"
+	   (string-join (cl-union (org-roam-node-tags-unsaved) (list tag) :test #'equal) ":")
+	   ":")))
+
+(defun my-org-roam-remove-tag (tag)
+  "Removes tag `tag` from current node. Idempotent operation."
+  (interactive)
+  (org-roam-set-keyword
+   "filetags"
+   (concat ":"
+	   (string-join (cl-set-difference (org-roam-node-tags-unsaved) (list tag) :test #'equal) ":")
+	   ":")))
+
+
 (defun my-org-mark-if-has-todo ()
   "Add tag \"@todo\" to node's filetags if a TODO is present"
   (interactive)
   (if (string-equal major-mode "org-mode")
       (when (org-roam-node-at-point)
-	(if (and (my-org-has-todo)
-		 (not (member "@todo" (org-roam-node-tags (org-roam-node-at-point)))))
-	    (progn
-	      (org-roam-set-keyword
-	       "filetags"
-	       (concat ":"
-		       (string-join (org-roam-node-tags (org-roam-node-at-point)) ":")
-		       (if (org-roam-node-tags (org-roam-node-at-point)) ":")
-		       "@todo:"))
-	      (message "Todo marking: Marked todo for %s"
-		       (org-roam-node-title (org-roam-node-at-point))))
-
-	  (if (not (my-org-has-todo))
-	      (progn
-		(org-roam-set-keyword
-		 "filetags"
-		 (concat ":"
-			 (string-join (delete "@todo" (org-roam-node-tags (org-roam-node-at-point))) ":")
-			 ":"))
-		(message "Todo marking: Removed todo for %s"
-			 (org-roam-node-title (org-roam-node-at-point)))))))))
+	(if (my-org-has-todo)
+	    (my-org-roam-add-tag "@todo")
+	  (my-org-roam-remove-tag "@todo")))))
 #+end_src
 ***** Setup hooks
 ****** ~find-file-hook~
 Run when a buffer is loaded from a file
 #+begin_src elisp
-(add-hook 'find-file-hook #'my-org-mark-if-has-todo)
+;;(add-hook 'find-file-hook #'my-org-mark-if-has-todo)
 #+end_src
 ****** ~before-save-hook~
 Run before a buffer is saved
@@ -734,7 +793,8 @@ Run before a buffer is saved
   (interactive)
   (let*
       ((todo (read-string "Todo: "))
-       (deadline (read-string "Deadline [relative]: "))
+       (deadline (read-string "Deadline [Relative or YYYY-MM-DD 24HH:MM]: "))
+       (tags (read-string "Tags [Space Separated, No Tab Complete]: "))
        (slug (org-roam-node-slug (org-roam-node-create :title todo)))
        (filename
 	(format "~/org/roam/%d-%s__QT__.org"
@@ -745,12 +805,17 @@ Run before a buffer is saved
     (with-temp-buffer
       (insert ":PROPERTIES:\n:ID:        \n:END:\n#+title: "
 	      (substring todo 0 (min quick-todo-filename-trunc-length (length todo)))
-	      "\n* TODO " todo)
-      (goto-char 25)
-      (setq id (org-id-get-create))
+	      "\n* TODO " todo
+	      (concat " \t:" (string-join (split-string tags " ") ":") ":"))
+      (save-excursion
+	(goto-char 25)
+	(setq id (org-id-get-create)))
       (write-file filename)
       (org-roam-tag-add '("quicktodo"))
-      (org-roam-db-update-file filename))
+      (org-roam-db-update-file filename)
+      (if (not (equal deadline "")) (org-deadline nil deadline))
+      (if (not (equal tags "")) (org-roam-tag-add (split-string tags " ")))
+      (write-file filename))
     (org-roam-db-sync)))
 			 
 #+end_src
@@ -797,39 +862,53 @@ Run before a buffer is saved
 *** Packages
 **** ~org-super-agenda~
 #+begin_src elisp
-(use-package org-super-agenda
-  :hook (org-agenda-mode . org-super-agenda-mode)
-  :bind (:map org-super-agenda-header-map
-	     ("j" . 'org-agenda-next-line)
-	     ("k" . 'org-agenda-previous-line))
-  :config
-  (setq org-super-agenda-groups
-	'((:log t)
-	  (:name "Completed today"
-		 :regexp "State \"DONE\"")
-	  (:name "Schedule"
-		 :time-grid t
-		 :order 1)
-	  (:name "Today"
-		 :and (
-		       :todo t
-		       :deadline today)
-		 :order 2)
-	  (:name "Overdue"
-		 :deadline past
-		 :order 97)
-	  (:name "Quick todo"
-		 :tag "quicktodo"
-		 :order 99)
-	  ;; (:name "Dateless"
-	  ;; 	 :date nil
-	  ;; 	 :order 99)
-	  (:name "AVC"
-		 :and (:tag ("@avc" "avc" "AVC") :todo t)
-		 :order 12)
-	  (:name "WAVES"
-		 :tag ("@waves" "WAVES" "waves" "research")
-		 :order 11))))
+;; (use-package org-super-agenda
+;;   :hook (org-agenda-mode . org-super-agenda-mode)
+;;   :bind (:map org-super-agenda-header-map
+;; 	     ("j" . 'org-agenda-next-line)
+;; 	     ("k" . 'org-agenda-previous-line))
+;;   :config
+;;   (setq org-super-agenda-groups
+;; 	'((:log t)
+;; 	  ;; (:name "Completed today"
+;; 	  ;; 	 :regexp "State \"DONE\"")
+;; 	  (:name "Schedule"
+;; 		 :time-grid t
+;; 		 :deadline today
+;; 		 :order 1)
+;; 	  ;; (:name "Today"
+;; 	  ;; 	 :and (
+;; 	  ;; 	       :todo t
+;; 	  ;; 	       :deadline today)
+;; 	  ;; 	 :order 2)
+;; 	  (:name "Overdue"
+;; 		 :deadline past
+;; 		 :order 97)
+;; 	  ;; (:name "Quick todo"
+;; 	  ;; 	 :tag "quicktodo"
+;; 	  ;; 	 :order 99)
+;; 	  (:name "Dateless"
+;; 		 :date nil
+;; 		 :order 99)
+;; 	  (:name "AVC"
+;; 		 :and (:tag ("@avc" "avc" "AVC") :todo t)
+;; 		 :order 12)
+;; 	  (:name "WAVES"
+;; 		 :tag ("@waves" "WAVES" "waves" "research")
+;; 		 :order 11))))
+
+;; (let ((org-super-agenda-groups
+;;       '((:log t)
+;; 	(:name "Schedule"
+;; 	       :time-grid t
+;; 	       :deadline today
+;; 	       :order 1)
+;; 	(:name "Overdue"
+;; 	       :deadline past))))
+;;   (org-agenda nil "a"))
+#+end_src
+**** ~org-ql~
+#+begin_src elisp
 #+end_src
 *** Files
 #+begin_src elisp
@@ -838,7 +917,7 @@ Run before a buffer is saved
 *** Prefix format
 #+begin_src elisp
 (setq org-agenda-prefix-format
-      '((agenda . "%+12(my-org-category-prefix) [ %15(string-join (my-org-get-tags-at-point-safe) \":\") ] %5t %s")
+      '((agenda . "%+12(my-org-category-prefix) [ %23(truncate-string-to-width (string-join (my-org-get-tags-at-point-safe) \":\") 23 nil nil (truncate-string-ellipsis) nil) ] %5t %s")
 	(todo . " %i %-12:c")
 	(tags . " %i %-12:c")
 	(search . "%i %-12:c")))
@@ -855,7 +934,7 @@ Run before a buffer is saved
 
 (setq org-agenda-window-setup "only-window")
 
-(setq org-agenda-span 'day)
+(setq org-agenda-span 'week)
 
 ;; (setq org-agenda-skip-deadline-if-done nil)
 ;; (setq org-agenda-skip-function-global '(org-agenda-skip-entry-if 'todo 'done))
@@ -880,11 +959,78 @@ Run before a buffer is saved
 #+end_src
 *** Custom views
 #+begin_src elisp
+;; https://emacs.stackexchange.com/questions/30188/show-only-todays-tasks-in-org-agenda
+(defun org-agenda-skip-deadline-if-not-today ()
+"If this function returns nil, the current match should not be skipped.
+Otherwise, the function must return a position from where the search
+should be continued."
+  (ignore-errors
+    (let ((subtree-end (save-excursion (org-end-of-subtree t)))
+          (deadline-day
+            (time-to-days
+              (org-time-string-to-time
+                (org-entry-get nil "DEADLINE"))))
+          (now (time-to-days (current-time))))
+       (and deadline-day
+            (not (= deadline-day now))
+            subtree-end))))
+
 (setq org-agenda-custom-commands
-      '(("cm" "Custom: Mcity"
-	 ((org-ql-block '(and (todo) (tags "@mcity"))
-			((org-ql-block-header "SOMEDAY :Emacs: High-priority")))
-	  ))))
+      '(("c" "Primary custom agenda"
+	 ;; Actual agenda (time grid, only today)
+	 (
+	  (agenda ""
+		 ((org-agenda-span 1)
+		  (org-agenda-span 'day)
+		  (org-agenda-skip-scheduled-if-done t)
+		  (org-agenda-skip-timestamp-if-done t)
+		  (org-agenda-skip-deadline-if-done t)
+		  (org-agenda-start-day "+0d")
+		  (org-agenda-time)
+		  (org-habit-show-habits t)
+		  (org-habit-show-all-today t)
+		  (org-habit-preceding-days 7)
+		  (org-habit-following-days 7)
+		  (org-agenda-time-grid
+		   (quote
+		    ((daily today require-timed)
+		     (800 1000 1200 1400 1600 1800 2000)
+		     " ├──────"
+		     "────────────────┤")))
+		  (org-agenda-skip-function
+		   '(org-agenda-skip-deadline-if-not-today))
+		  (org-agenda-show-log t)))
+
+	 ;; Habits
+
+	 ;; Overdue tasks
+	 (org-ql-block '(and (todo)
+			     (deadline :to today)
+			     (not (deadline :on today))
+			     ;; (not (ts :on today))
+			     (not (done)))
+	  ((org-ql-block-header "Overdue")))
+
+	 ;; Upcoming
+	 (org-ql-block '(and (todo)
+			     (deadline :from 1)
+			     (deadline :to 4))
+		       ((org-ql-block-header "Upcoming")))
+
+	 ;; Wish list
+	 ;; (org-ql-block '(and (todo)
+	 ;; 		     (tags "emacs_infra" "wish"))
+	 ;; 	       ((org-ql-block-header "Wish list")))
+
+	 ;; Quick todo (example)
+	 ;; (org-ql-block '(and (tags "quicktodo"))
+	 ;; 	       ((org-ql-block-header
+	 ;; 		 "Quick Todo")))
+
+	 ;; Done today
+	 (org-ql-block '(and (closed :on today))
+		       ((org-ql-block-header "Completed Today")))
+	 ))))
 #+end_src
 ** Babel
 *** General

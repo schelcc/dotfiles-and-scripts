@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+exit()
 import json
 import os
 from configparser import ConfigParser, ExtendedInterpolation

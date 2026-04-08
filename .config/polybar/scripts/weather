@@ -1,11 +1,58 @@
 #!/usr/bin/env python3
+"""Get and display temp and weather indicator for polybar."""
 import warnings
-warnings.filterwarnings("ignore")
 
 from polybar_print import polybar_print
 import requests
 import logging
 from subprocess import check_output
+
+warnings.filterwarnings("ignore")
+
+# Code	Description
+# 0	Clear sky
+# 1, 2, 3	Mainly clear, partly cloudy, and overcast
+# 45, 48	Fog and depositing rime fog
+# 51, 53, 55	Drizzle: Light, moderate, and dense intensity
+# 56, 57	Freezing Drizzle: Light and dense intensity
+# 61, 63, 65	Rain: Slight, moderate and heavy intensity
+# 66, 67	Freezing Rain: Light and heavy intensity
+# 71, 73, 75	Snow fall: Slight, moderate, and heavy intensity
+# 77	Snow grains
+# 80, 81, 82	Rain showers: Slight, moderate, and violent
+# 85, 86	Snow showers slight and heavy
+# 95 *	Thunderstorm: Slight or moderate
+# 96, 99 *	Thunderstorm with slight and heavy hail
+WEATHERCODE_SELECTOR = {
+    0: "󰖙",  # Clear sky
+    1: "󰖙",  # Mainly clear
+    2: "󰖐",  # Partly cloudy
+    3: "󰖐",  # Overcast
+    45: "󰖑",  # Fog
+    48: "󰖑",  # Fog
+    51: "",  # Light drizzle
+    53: "",  # Moderate drizzle
+    55: "",  # Dense drizzle
+    56: "",  # Light freezing drizzle
+    57: "",  # Dense freezing drizzle
+    61: "",  # Slight rain
+    63: "",  # Moderate rain
+    65: "",  # Heavy rain
+    66: "",  # Light freezing rain
+    67: "",  # Heavy freezing rain
+    71: "󰖘",  # Light snow fall
+    73: "󰖘",  # Moderate snow fall
+    75: "󰖘",  # Heavy snow fall
+    77: "󰖘",  # Snow grains ??
+    80: "",  # Light rain showers
+    81: "",  # Moderate rain showers
+    82: "",  # Violent rain showers
+    85: "󰖘",  # Light snow shower
+    86: "󰖘",  # Moderate snow shower
+    95: "󰖓",  # Thunderstorm
+    96: "󰖓",  # Thunderstorm
+    99: "󰖓"  # Thunderstorm
+}
 
 
 logger = logging.getLogger(__name__)
@@ -13,58 +60,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename="/home/schelcc/.config/polybar/scripts/weather.log",
                     format="%(asctime)s %(message)s",
 		    level=logging.INFO)
-
-'''
-
-Code	Description
-0	Clear sky
-1, 2, 3	Mainly clear, partly cloudy, and overcast
-45, 48	Fog and depositing rime fog
-51, 53, 55	Drizzle: Light, moderate, and dense intensity
-56, 57	Freezing Drizzle: Light and dense intensity
-61, 63, 65	Rain: Slight, moderate and heavy intensity
-66, 67	Freezing Rain: Light and heavy intensity
-71, 73, 75	Snow fall: Slight, moderate, and heavy intensity
-77	Snow grains
-80, 81, 82	Rain showers: Slight, moderate, and violent
-85, 86	Snow showers slight and heavy
-95 *	Thunderstorm: Slight or moderate
-96, 99 *	Thunderstorm with slight and heavy hail
-'''
-
-weathercode_selector = {
-	0 : "󰖙", # Clear sky
-	1 : "󰖙", # Mainly clear
-	2 : "󰖐", # Partly cloudy
-	3 : "󰖐", # Overcast
-
-	45 : "󰖑", # Fog
-	48 : "󰖑", # Fog
-
-	51 : "", # Light drizzle
-	53 : "", # Moderate drizzle
-	55 : "", # Dense drizzle
-
-	56 : "", # Light freezing drizzle
-	57 : "", # Dense freezing drizzle
-	61 : "", # Slight rain
-	63 : "", # Moderate rain
-	65 : "", # Heavy rain
-	66 : "", # Light freezing rain
-	67 : "", # Heavy freezing rain
-	71 : "󰖘", # Light snow fall
-	73 : "󰖘", # Moderate snow fall
-	75 : "󰖘", # Heavy snow fall
-	77 : "󰖘", # Snow grains ??
-	80 : "", # Light rain showers
-	81 : "", # Moderate rain showers
-	82 : "", # Violent rain showers
-	85 : "", # Light snow shower
-	86 : "", # Moderate snow shower
-	95 : "󰖓", # Thunderstorm
-	96 : "󰖓", # Thunderstorm
-	99 : "󰖓" # Thunderstorm
-}
 
 try:
     lat, lon = str(check_output("latlong.sh", shell=True))[2:-3].split(',')
@@ -85,20 +80,34 @@ URL = "https://api.open-meteo.com/v1/forecast?"+\
     "&timeformat=unixtime"+\
     "&timezone=America%2FChicago"
 
-r = requests.get(URL)
-r_json = r.json() 
-
-temperature = r_json['current_weather']['temperature']
-weathercode = r_json['current_weather']['weathercode']
 try:
-    weather_symbol = weathercode_selector[weathercode]
+    r = requests.get(URL)
+except Exception as err:
+    logger.warning(f"Bad request/response: {err}")
+    weather_symbol = ""
+    output = f"{weather_symbol}"
+    print(polybar_print(output))
+    exit()
+
+try:
+    r_json = r.json() 
+    temperature = r_json['current_weather']['temperature']
+    weathercode = r_json['current_weather']['weathercode']
+except Exception as err:
+    logger.warning(f"Bad response: {err}")
+    weather_symbol = ""
+    output = f"{weather_symbol}"
+    print(polybar_print(output))
+    exit()
+
+try:
+    weather_symbol = WEATHERCODE_SELECTOR[weathercode]
     logger.info(f"lat[{lat}] lon[{lon}] temp[{temperature}] Weathercode[{weathercode}]")
 except Exception as err:
     logger.warning(f"Unhandled weather code: {err}")
     weather_symbol = ""
     
-weather_symbol = weathercode_selector[51]
-
 output = f"{weather_symbol} {temperature} F"
+# output = "|".join([f"{x}{weathercode_selector[x]}" for x in weathercode_selector])
 
 print(polybar_print(output))

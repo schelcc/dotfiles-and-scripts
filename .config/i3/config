@@ -193,6 +193,7 @@ bindsym $mod+minus scratchpad show
 
 # Scratchpad specifics
 bindsym $mod+Shift+m exec ghostty --class="com.marking.scratch_term"
+bindsym $mod+Shift+p [class="KeePassXC"] scratchpad show
 bindsym $mod+m [class="com.marking.scratch_term"] scratchpad show
 bindsym $mod+a [title="^org_agenda_scratchpad"] scratchpad show
 bindsym $mod+c [class="^Gnome-calculator"] scratchpad show
@@ -241,6 +242,8 @@ for_window [class="^xpad"] floating toggle
 # Default discord and spotify to workspace 2
 assign [class="^discord"] $ws9
 assign [class="^slack"] $ws9
+assign [class="thunderbird-esr"] $ws8
+for_window [class="thunderbird-esr"] move to workspace $ws8
 for_window [class="Spotify"] move to workspace $ws10
 
 # Default gnome-calculator to floating and throw on scratchpad
